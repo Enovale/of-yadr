@@ -3,6 +3,7 @@
 
 #define PLUGIN_NAME           "Yet Another Discord Relay"
 #define PLUGIN_SHORTNAME      "yadr"
+#define PLUGIN_TRANS_FILE     "yadr.phrases"
 #define PLUGIN_AUTHOR         "Enova"
 #define PLUGIN_DESCRIPTION    "Discord Relay with a focus on clean compact output and performance."
 #define PLUGIN_VERSION        "1.0"
@@ -31,6 +32,9 @@ public Plugin myinfo =
 
 ConVar g_cvBotToken;
 ConVar g_cvChannelIds;
+ConVar g_cvWebsocketModeEnable;
+ConVar g_cvDiscordSendEnable;
+ConVar g_cvServerSendEnable;
 
 char g_ChannelList[255][SNOWFLAKE_SIZE_WITH_TERMINATOR];
 int g_ChannelListCount;
@@ -42,8 +46,13 @@ Handle t_Timer;
 
 public void OnPluginStart()
 {
+	LoadTranslations(PLUGIN_TRANS_FILE);
+
 	g_cvBotToken = CreateConVar("sm_discord_bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
-	g_cvChannelIds = CreateConVar("sm_discord_channel_ids", "", "list of channel IDs, separated by semicolons, to relay between.");
+	g_cvChannelIds = CreateConVar("sm_discord_channel_ids", "", "List of channel IDs, separated by semicolons, to relay between.");
+	g_cvWebsocketModeEnable = CreateConVar("sm_discord_websocket_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
+	g_cvDiscordSendEnable = CreateConVar("sm_discord_dc_send_enable", "1", "Enable discord messages to be sent to the server.");
+	g_cvServerSendEnable = CreateConVar("sm_discord_server_send_enable", "1", "Enable player messages to be sent to discord.");
 
 	if (DEBUG)
 	{
@@ -206,7 +215,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 	char authorId[SNOWFLAKE_SIZE_WITH_TERMINATOR];
 	message.GetAuthorId(authorId, sizeof(authorId));
 
-	if (StrEqual(authorId, g_BotId) || message.IsBot())
+	if (StrEqual(authorId, g_BotId) || message.IsBot() || !g_cvDiscordSendEnable.BoolValue)
 	{
 		return;
 	}
@@ -242,10 +251,16 @@ public void Discord_OnError(Discord discord, const char[] error)
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
+	if (!g_cvServerSendEnable.BoolValue)
+	{
+		return Plugin_Continue;
+	}
+
 	for (int i = 0; i < g_ChannelListCount; i++)
 	{
 		LogMessage(message);
 		g_Discord.SendMessage(g_ChannelList[i], message);
 	}
-	return Plugin_Changed;
+	
+	return Plugin_Continue;
 }

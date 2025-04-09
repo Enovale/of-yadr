@@ -1,0 +1,8 @@
+"Phrases"
+{
+    "Discord->Server Message Content"
+    {
+        "#format" "{1:s}"
+        "en" "[DISCORD] {1}"
+    }
+}

@@ -16,3 +16,8 @@ Proper readme WIP
 # Planned Features
 
 - WIP
+
+# Building
+
+I highly recommend [Sourcepawn Studio](https://github.com/Sarrus1/sourcepawn-studio).
+With a proper setup it can create a seamless workflow and means I don't have to push hacky scripts to my repository.
