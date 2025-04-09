@@ -1,5 +1,5 @@
 
-#define DEBUG
+#define DEBUG 1
 
 #define PLUGIN_NAME           "Yet Another Discord Relay"
 #define PLUGIN_SHORTNAME      "yadr"
@@ -44,6 +44,11 @@ public void OnPluginStart()
 {
 	g_cvBotToken = CreateConVar("sm_discord_bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
 	g_cvChannelIds = CreateConVar("sm_discord_channel_ids", "", "list of channel IDs, separated by semicolons, to relay between.");
+
+	if (DEBUG)
+	{
+		ServerCommand("sm_reload_translations");
+	}
 
 	g_cvBotToken.AddChangeHook(OnBotTokenChange);
 	g_cvChannelIds.AddChangeHook(OnCvarChange);
@@ -143,17 +148,27 @@ public void Discord_OnReady(Discord discord)
 	//g_Discord.RegisterGlobalSlashCommand("ban", "Ban a player from the server.");
 	//g_Discord.RegisterGlobalSlashCommand("kick", "Kick a player from the server.");f
 
-	t_Timer = CreateTimer(5.0, UpdatePresence, 0, TIMER_REPEAT);
+	t_Timer = CreateTimer(5.0, UpdatePresenceTimer, 0, TIMER_REPEAT);
 }
 
-public Action UpdatePresence(Handle timer, any data)
+public void OnServerEnterHibernation()
+{
+	TriggerTimer(t_Timer);
+}
+
+public Action UpdatePresenceTimer(Handle timer, any data)
+{
+	UpdatePresence();
+
+	return Plugin_Continue;
+}
+
+void UpdatePresence()
 {
 	char playerCount[20];
 	int clientCount = GetClientCount(false);
 	Format(playerCount, sizeof(playerCount), "%d player%s connected.", clientCount, clientCount == 1 ? "" : "s");
 	g_Discord.SetPresence(Presence_Online, Activity_Custom, playerCount);
-
-	return Plugin_Continue;
 }
 
 public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interaction)
@@ -218,6 +233,11 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 			break;
 		}
 	}
+}
+
+public void Discord_OnError(Discord discord, const char[] error)
+{
+	// Stub
 }
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
