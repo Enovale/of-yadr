@@ -4,7 +4,7 @@
 #define PLUGIN_NAME           "Yet Another Discord Relay"
 #define PLUGIN_SHORTNAME      "yadr"
 #define PLUGIN_AUTHOR         "Enova"
-#define PLUGIN_DESCRIPTION    ""
+#define PLUGIN_DESCRIPTION    "Discord Relay with a focus on clean compact output and performance."
 #define PLUGIN_VERSION        "1.0"
 #define PLUGIN_URL            "https://github.com/Enovale/of-yadr"
 
