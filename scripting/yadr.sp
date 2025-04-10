@@ -15,11 +15,10 @@
 #include <discord>
 #include <morecolors>
 
+#include "yadr/format_vars.sp"
+
 #pragma semicolon 1
 #pragma newdecls required
-
-#define SNOWFLAKE_SIZE_WITH_TERMINATOR 20
-#define MAX_DISCORD_NAME_LENGTH_WITH_TERMINATOR 33
 
 public Plugin myinfo =
 {
@@ -31,11 +30,15 @@ public Plugin myinfo =
 };
 
 ConVar g_cvBotToken;
+ConVar g_cvSteamApiKey;
 ConVar g_cvChannelIds;
 ConVar g_cvWebsocketModeEnable;
 ConVar g_cvDiscordSendEnable;
 ConVar g_cvServerSendEnable;
+ConVar g_cvDiscordColorCodesEnable;
 
+// 255 channel list limit is arbitrary.
+// TODO Use ArrayList instead
 char g_ChannelList[255][SNOWFLAKE_SIZE_WITH_TERMINATOR];
 int g_ChannelListCount;
 
@@ -49,10 +52,12 @@ public void OnPluginStart()
 	LoadTranslations(PLUGIN_TRANS_FILE);
 
 	g_cvBotToken = CreateConVar("sm_discord_bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
+	g_cvSteamApiKey = CreateConVar("sm_discord_steam_api_key", "", "Steam Web API key for fetching player avatars.", FCVAR_PROTECTED);
 	g_cvChannelIds = CreateConVar("sm_discord_channel_ids", "", "List of channel IDs, separated by semicolons, to relay between.");
 	g_cvWebsocketModeEnable = CreateConVar("sm_discord_websocket_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
 	g_cvDiscordSendEnable = CreateConVar("sm_discord_dc_send_enable", "1", "Enable discord messages to be sent to the server.");
 	g_cvServerSendEnable = CreateConVar("sm_discord_server_send_enable", "1", "Enable player messages to be sent to discord.");
+	g_cvDiscordColorCodesEnable = CreateConVar("sm_discord_dc_color_codes_enable", "0", "Allows discord messages to contain color codes like {grey} or {green}.");
 
 	if (DEBUG)
 	{
@@ -64,6 +69,8 @@ public void OnPluginStart()
 
 	AutoExecConfig(true, PLUGIN_SHORTNAME);
 	UpdateCvars();
+
+	CacheFormatVars();
 
 	SetupDiscordBot();
 
@@ -144,13 +151,18 @@ public void OnMapStart()
 	}
 }
 
+public void OnMapInit(const char[] mapName)
+{
+	CacheExplicitMapName(mapName);
+}
+
 public void Discord_OnReady(Discord discord)
 {
-	char botName[32], botId[32];
+	char botName[MAX_DISCORD_NAME_LENGTH_WITH_TERMINATOR], botId[MAX_DISCORD_NAME_LENGTH_WITH_TERMINATOR];
 	discord.GetBotName(botName, sizeof(botName));
 	discord.GetBotId(botId, sizeof(botId));
 
-	PrintToServer("Bot %s (ID: %s) is ready!", botName, botId);
+	LogMessage("Bot %s (ID: %s) is ready!", botName, botId);
 
 	g_Discord.RegisterGlobalSlashCommand("ping", "Check bot latency");
 	g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
@@ -174,10 +186,10 @@ public Action UpdatePresenceTimer(Handle timer, any data)
 
 void UpdatePresence()
 {
-	char playerCount[20];
+	char playerCountStr[MAX_DISCORD_PRESENCE_LENGTH_WITH_TERMINATOR];	
 	int clientCount = GetClientCount(false);
-	Format(playerCount, sizeof(playerCount), "%d player%s connected.", clientCount, clientCount == 1 ? "" : "s");
-	g_Discord.SetPresence(Presence_Online, Activity_Custom, playerCount);
+	Format(playerCountStr, sizeof(playerCountStr), "%t", clientCount == 1 ? "Status" : "Status Plural", clientCount);
+	g_Discord.SetPresence(Presence_Online, Activity_Custom, playerCountStr);
 }
 
 public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interaction)
@@ -194,14 +206,13 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 		char playersString[3 * 2 + 1];
 		Format(playersString, sizeof(playersString), "%d/%d", GetClientCount(), MaxClients);
 
-		// https://tf2maps.net/threads/what-exactly-is-the-maximum-map-name-length.53568/
-		char mapName[64];
+		// Source SDK 2013's MAX_MAP_NAME
+		char mapName[MAX_MAP_NAME_WITH_TERMINATOR];
 		GetCurrentMap(mapName, sizeof(mapName));
 
 		DiscordEmbed embed = new DiscordEmbed();
 		embed.SetTitle("Server Status");
 		embed.SetDescription("Current server information");
-		//embed.SetColor(0x00FF00);  // Green color
 		embed.AddField("Players", playersString, true);
 		embed.AddField("Map", mapName, true);
 
@@ -235,10 +246,13 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 			char authorName[MAX_DISCORD_NAME_LENGTH_WITH_TERMINATOR];
 			message.GetAuthorName(authorName, sizeof(authorName));
 
-			char outputMessage[MAX_DISCORD_NAME_LENGTH_WITH_TERMINATOR + MAX_MESSAGE_LENGTH + 100];
-			Format(outputMessage, sizeof(outputMessage), "[DISCORD] %s: %s", authorName, content);
+			if (!g_cvDiscordColorCodesEnable.BoolValue)
+			{
+				CRemoveTags(authorName, sizeof(authorName));
+				CRemoveTags(content, sizeof(content));
+			}
 
-			CPrintToChatAll("%s", outputMessage);
+			CPrintToChatAll("%t", "Discord->Server Message Content", authorName, content);
 			break;
 		}
 	}
@@ -246,7 +260,10 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 
 public void Discord_OnError(Discord discord, const char[] error)
 {
-	// Stub
+	if (DEBUG)
+	{
+		LogMessage(error);
+	}
 }
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)

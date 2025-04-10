@@ -1,8 +1,27 @@
+/*
+ * Any phrases used on the server side can use color codes listed here: https://forums.alliedmods.net/showthread.php?t=185016
+*/
+
 "Phrases"
 {
+    "Status"
+    {
+        "#format" "{1:d}"
+        "en" "{1} Player Connected."
+    }
+    "Status Plural"
+    {
+        "#format" "{1:d}"
+        "en" "{1} Players Connected."
+    }
     "Discord->Server Message Content"
     {
-        "#format" "{1:s}"
-        "en" "[DISCORD] {1}"
+        "#format" "{1:s},{2:s}"
+        "en" "{lightblue}[DISCORD] {white}{1}: {grey}{2}"
+    }
+    "Server->Discord Message Content"
+    {
+        "#format" "{1:s},{2:s}"
+        "en" "{1}: {2}"
     }
 }
