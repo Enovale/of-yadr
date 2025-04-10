@@ -6,6 +6,7 @@ Proper readme WIP
 
 - [sm-ext-discord](https://github.com/Enovale/sm-ext-discord) (Using this specific fork is required)
 - [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
+- [ripext](https://forums.alliedmods.net/showthread.php?t=298024)
 - [Chat Processor](https://github.com/KeithGDR/chat-processor)
 - [More Colors](https://forums.alliedmods.net/showthread.php?t=185016)
 

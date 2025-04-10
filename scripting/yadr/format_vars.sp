@@ -2,7 +2,7 @@
 
 char g_ServerIpStr[16];
 char g_ServerHostname[64];
-char g_CachedMapName[MAX_MAP_NAME_WITH_TERMINATOR];
+char g_CachedMapName[MAX_MAP_NAME];
 int g_MaxPlayers;
 
 void CacheFormatVars()
