@@ -2,64 +2,71 @@
 #include <ripext>
 #include <morecolors>
 
-#define MAX_MAP_NAME 64
-#define MAX_TEAM_NAME 32
-#define MAX_IP_LENGTH 16
+#define MAX_MAP_NAME    64
+#define MAX_TEAM_NAME   32
+#define MAX_IP_LENGTH   16
 #define MAX_PORT_LENGTH 6
 
-char g_SteamApiKey[33];
+char       g_SteamApiKey[33];
 HTTPClient g_HttpClient;
-char g_SteamAvatars[MAXPLAYERS][100];
+char       g_SteamAvatars[MAXPLAYERS][100];
 
 char[] GetServerIP()
 {
-	char ipStr[MAX_IP_LENGTH];
-	int pieces[4];
+    char ipStr[MAX_IP_LENGTH];
+    int  pieces[4];
 
-	if (SteamWorks_GetPublicIP(pieces)) {
+    if (SteamWorks_GetPublicIP(pieces))
+    {
         FormatEx(ipStr, sizeof(ipStr), "%d.%d.%d.%d", pieces[0], pieces[1], pieces[2], pieces[3]);
-    } else {
+    }
+    else {
         LogError("Appears like we had an error on getting the Public IP address.");
     }
 
-	return ipStr;
+    return ipStr;
 }
 
-public bool IsValidClient(int client) {
-	if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || !IsClientConnected(client) || IsFakeClient(client) || IsClientSourceTV(client))
-		return false;
+public bool IsValidClient(int client)
+{
+    if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || !IsClientConnected(client) || IsFakeClient(client) || IsClientSourceTV(client))
+        return false;
 
-	return true;
+    return true;
 }
 
-public int GetPlayers(bool connecting) {
-	int players;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (connecting && IsClientConnected(i) && !IsClientInGame(i))players++;
-		else if (!connecting && IsValidClient(i))players++;
-	}
-	return players;
+public int GetPlayers(bool connecting)
+{
+    int players;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (connecting && IsClientConnected(i) && !IsClientInGame(i)) players++;
+        else if (!connecting && IsValidClient(i)) players++;
+    }
+    return players;
 }
 
-char[] FormatShortTime(int time) {
-	char Time[12];
-	int g_iHours = 0;
-	int g_iMinutes = 0;
-	int g_iSeconds = time;
+char[] FormatShortTime(int time)
+{
+    char Time[12];
+    int  g_iHours   = 0;
+    int  g_iMinutes = 0;
+    int  g_iSeconds = time;
 
-	while (g_iSeconds > 3600) {
-		g_iHours++;
-		g_iSeconds -= 3600;
-	}
-	while (g_iSeconds > 60) {
-		g_iMinutes++;
-		g_iSeconds -= 60;
-	}
-	if (g_iHours >= 1)FormatEx(Time, sizeof(Time), "%d:%d:%d", g_iHours, g_iMinutes, g_iSeconds);
-	else if (g_iMinutes >= 1)FormatEx(Time, sizeof(Time), "%d:%d", g_iMinutes, g_iSeconds);
-	else FormatEx(Time, sizeof(Time), "%d", g_iSeconds);
-	return Time;
+    while (g_iSeconds > 3600)
+    {
+        g_iHours++;
+        g_iSeconds -= 3600;
+    }
+    while (g_iSeconds > 60)
+    {
+        g_iMinutes++;
+        g_iSeconds -= 60;
+    }
+    if (g_iHours >= 1) FormatEx(Time, sizeof(Time), "%d:%d:%d", g_iHours, g_iMinutes, g_iSeconds);
+    else if (g_iMinutes >= 1) FormatEx(Time, sizeof(Time), "%d:%d", g_iMinutes, g_iSeconds);
+    else FormatEx(Time, sizeof(Time), "%d", g_iSeconds);
+    return Time;
 }
 
 char[] GetClientConnectionTime(int client)
@@ -97,7 +104,7 @@ char[] GetClientAuthIdEngine(int client)
 
 char[] GetClientIpEx(int client)
 {
-	char ipStr[16];
+    char ipStr[16];
     bool success = GetClientIP(client, ipStr, sizeof(ipStr), true);
     return success ? ipStr : "N/A";
 }
@@ -153,10 +160,10 @@ public void GetProfilePicCallback(HTTPResponse response, any client)
         return;
     }
 
-    JSONObject objects = view_as<JSONObject>(response.Data);
-    JSONObject Response = view_as<JSONObject>(objects.Get("response"));
-    JSONArray players = view_as<JSONArray>(Response.Get("players"));
-    int playerlen = players.Length;
+    JSONObject objects   = view_as<JSONObject>(response.Data);
+    JSONObject Response  = view_as<JSONObject>(objects.Get("response"));
+    JSONArray  players   = view_as<JSONArray>(Response.Get("players"));
+    int        playerlen = players.Length;
     PrintToConsole(0, "[yadr.smx] DEBUG: Client %i SteamAPI Response Length: %i", client, playerlen);
 
     JSONObject player;
@@ -169,7 +176,7 @@ public void GetProfilePicCallback(HTTPResponse response, any client)
     }
 }
 
-void SanitiseText(String:message[], int maxLength, bool removeTags = true)
+void SanitiseText(char[] message, int maxLength, bool removeTags = true)
 {
     // Make sure people can't mention others
     ReplaceString(message, maxLength, "<@", "");
@@ -184,6 +191,6 @@ void SanitiseText(String:message[], int maxLength, bool removeTags = true)
 
     if (removeTags)
     {
-	    CRemoveTags(message, maxLength);
+        CRemoveTags(message, maxLength);
     }
 }
