@@ -12,6 +12,7 @@
 #include <discord>
 
 #include "yadr/format_vars.sp"
+#include "yadr/translation_phrases.sp"
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -44,6 +45,8 @@ int g_ChannelListCount;
 ArrayList g_BannedWords;
 
 Discord g_Discord;
+bool g_BotReady;
+char g_BotName[MAX_DISCORD_NAME_LENGTH];
 char g_BotId[SNOWFLAKE_SIZE];
 
 bool g_ServerIdle;
@@ -59,7 +62,7 @@ public void OnPluginStart()
 	g_cvWebsocketModeEnable = CreateConVar("sm_discord_websocket_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
 	g_cvDiscordSendEnable = CreateConVar("sm_discord_dc_send_enable", "1", "Enable discord messages to be sent to the server.");
 	g_cvServerSendEnable = CreateConVar("sm_discord_server_send_enable", "1", "Enable player messages to be sent to discord.");
-	g_cvDiscordColorCodesEnable = CreateConVar("sm_discord_dc_color_codes_enable", "0", "Allows discord messages to contain color codes like {grey} or {green}.");
+	g_cvDiscordColorCodesEnable = CreateConVar("sm_discord_dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
 	
 	g_cvVerboseEnable = CreateConVar("sm_discord_verbose", "0", "Enable verbose logging for the discord backend.");
 
@@ -76,10 +79,7 @@ public void OnPluginStart()
 	AutoExecConfig(true, PLUGIN_SHORTNAME);
 	UpdateCvars();
 
-	g_BannedWords = new ArrayList(ByteCountToCells(MAX_MESSAGE_LENGTH));
-	char filePath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, filePath, sizeof(filePath), "configs/%s_banned_prefixes.txt", PLUGIN_SHORTNAME);
-	GetBannedWords(filePath);
+	InitializeBannedWords(true);
 
 	SetupDiscordBot();
 
@@ -92,7 +92,7 @@ public void OnPluginStart()
 	{
 		// Get steam avatars for existing players in case of plugin reload
 		for (int i = 1; i <= MaxClients; i++) {
-			if (IsClientConnected(i) && !IsFakeClient(i) && !IsClientSourceTV(i)) {
+			if (IsValidClient(i)) {
 				GetProfilePic(i);
 			}
 		}
@@ -104,6 +104,23 @@ public void OnPluginStart()
 public void OnConfigsExecuted()
 {
 	CacheFormatVars();
+
+	InitializeBannedWords();
+
+	OnMapStartOnce();
+}
+
+void InitializeBannedWords(bool force = false)
+{
+	if (g_BannedWords && !force)
+	{
+		return;
+	}
+
+	g_BannedWords = new ArrayList(ByteCountToCells(MAX_MESSAGE_LENGTH));
+	char filePath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, filePath, sizeof(filePath), "configs/%s_banned_prefixes.txt", PLUGIN_SHORTNAME);
+	GetBannedWords(filePath);
 }
 
 void GetBannedWords(const char[] path)
@@ -143,14 +160,29 @@ public void OnBotTokenChange(ConVar convar, char[] oldValue, char[] newValue)
 public void OnMapStart()
 {
 	g_ServerIdle = false;
-	if (g_Discord == INVALID_HANDLE)
-	{
-		SetupDiscordBot();
-	}
 	
 	if (t_Timer)
 	{
 		TriggerTimer(t_Timer);
+	}
+}
+
+void OnMapStartOnce()
+{
+	if (g_Discord == INVALID_HANDLE)
+	{
+		SetupDiscordBot();
+	}
+
+	if (g_BotReady && TranslationPhraseExists(TRANSLATION_MAP_CHANGE_EVENT))
+	{
+		char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+		FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_MAP_CHANGE_EVENT,
+													 	g_CachedMapName,
+													 	g_ServerHostname
+		);
+
+		SendContent(eventBuffer);
 	}
 }
 
@@ -194,7 +226,7 @@ public void OnClientPostAdminCheck(int client)
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
-	if (!g_cvServerSendEnable.BoolValue || message[0] == '!' || (message[0] == '!' && message[1] == '!')) // Ignore chat commands
+	if (!g_cvServerSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE) || message[0] == '!' || (message[0] == '!' && message[1] == '!')) // Ignore chat commands
 	{
 		return Plugin_Continue;
 	}
@@ -230,7 +262,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 	Format(sMessage, tempLength, "%s", tempBuffer);
 
 	char finalContent[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-	FormatEx(finalContent, sizeof(finalContent), "%t", "Server->Discord Message Content",
+	FormatEx(finalContent, sizeof(finalContent), "%t", TRANSLATION_SERVER_DISCORD_MESSAGE,
 											sName,
 											sMessage,
 											author,
@@ -251,12 +283,8 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 											g_ServerPort,
 											GetPlayers(false),
 											g_MaxPlayers
-			);
-	for (int i = 0; i < g_ChannelListCount; i++)
-	{
-		LogMessage(finalContent);
-		g_Discord.SendMessage(g_ChannelList[i], finalContent);
-	}
+	);
+	SendContent(finalContent);
 	
 	return Plugin_Continue;
 }
@@ -305,8 +333,17 @@ void SetupDiscordBot()
 
 void TeardownDiscordBot()
 {
+	g_BotReady = false;
+
 	if (g_Discord != INVALID_HANDLE)
 	{
+		if (TranslationPhraseExists(TRANSLATION_BOT_STOP_EVENT))
+		{
+			char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+			FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_BOT_STOP_EVENT, g_BotName);
+			SendContent(eventBuffer);
+		}
+
 		g_Discord.Stop();
 	}
 
@@ -316,11 +353,12 @@ void TeardownDiscordBot()
 
 public void Discord_OnReady(Discord discord)
 {
-	char botName[MAX_DISCORD_NAME_LENGTH], botId[MAX_DISCORD_NAME_LENGTH];
-	discord.GetBotName(botName, sizeof(botName));
-	discord.GetBotId(botId, sizeof(botId));
+	g_BotReady = true;
 
-	LogMessage("Bot %s (ID: %s) is ready!", botName, botId);
+	discord.GetBotName(g_BotName, sizeof(g_BotName));
+	discord.GetBotId(g_BotId, sizeof(g_BotId));
+
+	LogMessage("Bot %s (ID: %s) is ready!", g_BotName, g_BotId);
 
 	g_Discord.RegisterGlobalSlashCommand("ping", "Check bot latency");
 	g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
@@ -334,6 +372,13 @@ public void Discord_OnReady(Discord discord)
 	}
 
 	t_Timer = CreateTimer(5.0, UpdatePresenceTimer, 0, TIMER_REPEAT);
+
+	if (TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
+	{
+		char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+		FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_BOT_START_EVENT, g_BotName);
+		SendContent(eventBuffer);
+	}
 }
 
 public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interaction)
@@ -370,7 +415,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 	char authorId[SNOWFLAKE_SIZE];
 	message.GetAuthorId(authorId, sizeof(authorId));
 
-	if (StrEqual(authorId, g_BotId) || message.IsBot() || !g_cvDiscordSendEnable.BoolValue)
+	if (StrEqual(authorId, g_BotId) || message.IsBot() || !g_cvDiscordSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE))
 	{
 		return;
 	}
@@ -398,13 +443,13 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 
 			int authorDescriminator = message.GetAuthorDiscriminator();
 
-			CPrintToChatAll("%t", "Discord->Server Message Content", authorName,
+			CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE, authorName,
 																	content,
 																	g_ChannelNameList[i],
 																	authorId,
 																	authorDescriminator,
 																	channelId
-							);
+			);
 			break;
 		}
 	}
@@ -426,6 +471,15 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 	LogMessage("Outputting to: #%s", g_ChannelNameList[index]);
 }
 
+void SendContent(char[] content)
+{
+	for (int i = 0; i < g_ChannelListCount; i++)
+	{
+		LogMessage(content);
+		g_Discord.SendMessage(g_ChannelList[i], content);
+	}
+}
+
 public Action UpdatePresenceTimer(Handle timer, any data)
 {
 	UpdatePresence();
@@ -435,10 +489,15 @@ public Action UpdatePresenceTimer(Handle timer, any data)
 
 void UpdatePresence()
 {
+	if (!TranslationPhraseExists(TRANSLATION_STATUS) || !TranslationPhraseExists(TRANSLATION_STATUS_PLURAL))
+	{
+		return;
+	}
+
 	char playerCountStr[MAX_DISCORD_PRESENCE_LENGTH];	
 	int clientCount = GetPlayers(false);
 	FormatEx(playerCountStr, sizeof(playerCountStr), "%t",
-											clientCount == 1 ? "Status" : "Status Plural",
+											clientCount == 1 ? TRANSLATION_STATUS : TRANSLATION_STATUS_PLURAL,
 											clientCount,
 											g_MaxPlayers,
 											g_CachedMapName,
@@ -446,7 +505,7 @@ void UpdatePresence()
 											g_ServerHostname,
 											g_ServerIpStr,
 											g_ServerPort
-			);
+	);
 	g_Discord.SetPresence(g_ServerIdle ? Presence_Idle : Presence_Online, Activity_Custom, playerCountStr);
 }
 

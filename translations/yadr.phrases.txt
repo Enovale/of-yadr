@@ -63,4 +63,19 @@
         "#format" "{1:s}"
         "en" "{1} disconnected."
     }
+    "Map Change Event"
+    {
+        "#format" "{1:s}"
+        "en" "-# Map change: {1}"
+    }
+    "Bot Stopping Event"
+    {
+        "#format" "{1:s}"
+        "en" "-# Bot going down..."
+    }
+    "Bot Starting Event"
+    {
+        "#format" "{1:s}"
+        "en" "-# Bot started up."
+    }
 }
