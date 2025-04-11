@@ -4,22 +4,25 @@
 
 #define MAX_MAP_NAME 64
 #define MAX_TEAM_NAME 32
+#define MAX_IP_LENGTH 16
+#define MAX_PORT_LENGTH 6
 
 char g_SteamApiKey[33];
 HTTPClient g_HttpClient;
 char g_SteamAvatars[MAXPLAYERS][100];
 
-char[] GetServerIP() {
-	char NetIP[16];
+char[] GetServerIP()
+{
+	char ipStr[MAX_IP_LENGTH];
 	int pieces[4];
 
 	if (SteamWorks_GetPublicIP(pieces)) {
-        FormatEx(NetIP, sizeof(NetIP), "%d.%d.%d.%d:%d", pieces[0], pieces[1], pieces[2], pieces[3], GetConVarInt(FindConVar("hostport")));
+        FormatEx(ipStr, sizeof(ipStr), "%d.%d.%d.%d", pieces[0], pieces[1], pieces[2], pieces[3]);
     } else {
         LogError("Appears like we had an error on getting the Public IP address.");
     }
 
-	return NetIP;
+	return ipStr;
 }
 
 public bool IsValidClient(int client) {
@@ -68,6 +71,7 @@ char[] GetNextMapEx()
 {
     char buffer[MAX_MAP_NAME];
     bool success = GetNextMap(buffer, sizeof(buffer));
+    SanitiseText(buffer, sizeof(buffer));
     return success ? buffer : "None";
 }
 
@@ -89,6 +93,13 @@ char[] GetClientAuthId3(int client)
 char[] GetClientAuthIdEngine(int client)
 {
     return GetClientAuthIdEx(client, AuthId_Engine);
+}
+
+char[] GetClientIpEx(int client)
+{
+	char ipStr[16];
+    bool success = GetClientIP(client, ipStr, sizeof(ipStr), true);
+    return success ? ipStr : "N/A";
 }
 
 char[] GetClientAuthIdEx(int client, AuthIdType type)
@@ -160,13 +171,16 @@ public void GetProfilePicCallback(HTTPResponse response, any client)
 
 void SanitiseText(String:message[], int maxLength, bool removeTags = true)
 {
-    ReplaceString(message, maxLength, "@", "");
-    ReplaceString(message, maxLength, "`", "");
-    ReplaceString(message, maxLength, "\\", "");
+    // Make sure people can't mention others
+    ReplaceString(message, maxLength, "<@", "");
+    // Or insert channel references
+    ReplaceString(message, maxLength, "<#", "");
+    // Or create code blocks
+    ReplaceString(message, maxLength, "`", "'");
+    // Or spoiler images that would make logs hard to see at a glance
     ReplaceString(message, maxLength, "||", "");
-    //ReplaceString(message, maxLength, "# ", "");
-    //ReplaceString(message, maxLength, "## ", "");
-    //ReplaceString(message, maxLength, "### ", "");
+
+    // We could also strip @everyone or @here but really you should be tuning this with discord permissions instead
 
     if (removeTags)
     {

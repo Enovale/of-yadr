@@ -22,7 +22,45 @@
     }
     "Server->Discord Message Content"
     {
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:s},{16:s},{17:d},{18:d}"
-        "en" "{1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} | {9} | {10} | {11} | {12} | {13} | {14} | {15} | {16} | {17} | {18}"
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:s},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:s},{16:s},{17:s},{18:d},{19:d},{20:d}"
+        "en" "{1} | {2} | {3} | {4} | {5} | {6} | {7} | {8} | {9} | {10} | {11} | {12} | {13} | {14} | {15} | {16} | {17} | {18} | {19} | {20}"
+    }
+    "Webhook Events"
+    {
+        "#format" ""
+        "en" "Server Events"
+    }
+    "Webhook Name"
+    {
+        "#format" ""
+        "en" ""
+    }
+    "Webhook Message"
+    {
+        "#format" ""
+        "en" ""
+    }
+    // When many players are grouped together in another phrase, this translation is used
+    "Player List"
+    {
+        "#format" "{1:s},{2:s}"
+        "en" "{1}, "
+    }
+    "Player Connect Event"
+    {
+        "#format" "{1:s}"
+        "en" "{1} connected."
+    }
+    "Player Disconnect Event"
+    {
+        "#format" "{1:s}"
+        "en" "{1} disconnected."
+    }
+    // Called the first time a player speaks after someone else has spoken
+    // Simulate's discord separation of messages sent quickly one after another
+    "Player Information Event"
+    {
+        "#format" "{1:s}"
+        "en" "{1} disconnected."
     }
 }

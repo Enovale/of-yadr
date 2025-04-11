@@ -41,9 +41,12 @@ char g_ChannelList[255][SNOWFLAKE_SIZE];
 char g_ChannelNameList[sizeof(g_ChannelList)][MAX_DISCORD_CHANNEL_NAME_LENGTH];
 int g_ChannelListCount;
 
+ArrayList g_BannedWords;
+
 Discord g_Discord;
 char g_BotId[SNOWFLAKE_SIZE];
 
+bool g_ServerIdle;
 Handle t_Timer;
 
 public void OnPluginStart()
@@ -73,6 +76,11 @@ public void OnPluginStart()
 	AutoExecConfig(true, PLUGIN_SHORTNAME);
 	UpdateCvars();
 
+	g_BannedWords = new ArrayList(ByteCountToCells(MAX_MESSAGE_LENGTH));
+	char filePath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, filePath, sizeof(filePath), "configs/%s_banned_prefixes.txt", PLUGIN_SHORTNAME);
+	GetBannedWords(filePath);
+
 	SetupDiscordBot();
 
 	if (g_HttpClient != null)
@@ -98,6 +106,30 @@ public void OnConfigsExecuted()
 	CacheFormatVars();
 }
 
+void GetBannedWords(const char[] path)
+{
+	if (!FileExists(path))
+	{
+		Handle fileHandle = OpenFile(path,"w");
+		WriteFileString(fileHandle, "rtv\nnominate", false);
+    	CloseHandle(fileHandle);
+	}
+
+    char line[MAX_MESSAGE_LENGTH];
+
+	Handle fileHandle = OpenFile(path,"r");
+    while(!IsEndOfFile(fileHandle) && ReadFileLine(fileHandle, line, sizeof(line)))
+    {
+		if (g_BannedWords.FindString(line) == -1)
+		{
+			ReplaceStringEx(line, sizeof(line), "\n", "");
+            g_BannedWords.PushString(line);
+		}
+    }
+
+    CloseHandle(fileHandle);
+}
+
 public void OnCvarChange(ConVar convar, char[] oldValue, char[] newValue)
 {
 	UpdateCvars();
@@ -110,9 +142,15 @@ public void OnBotTokenChange(ConVar convar, char[] oldValue, char[] newValue)
 
 public void OnMapStart()
 {
+	g_ServerIdle = false;
 	if (g_Discord == INVALID_HANDLE)
 	{
 		SetupDiscordBot();
+	}
+	
+	if (t_Timer)
+	{
+		TriggerTimer(t_Timer);
 	}
 }
 
@@ -121,10 +159,32 @@ public void OnMapInit(const char[] mapName)
 	CacheExplicitMapName(mapName);
 }
 
+public void OnMapEnd()
+{
+	g_ServerIdle = true;
+	if (t_Timer)
+	{
+		TriggerTimer(t_Timer);
+	}
+}
+
 // Make sure to update presence immediately when entering hibernation
 public void OnServerEnterHibernation()
 {
-	TriggerTimer(t_Timer);
+	g_ServerIdle = true;
+	if (t_Timer)
+	{
+		TriggerTimer(t_Timer);
+	}
+}
+
+public void OnServerExitHibernation()
+{
+	g_ServerIdle = false;
+	if (t_Timer)
+	{
+		TriggerTimer(t_Timer);
+	}
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -139,17 +199,45 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 		return Plugin_Continue;
 	}
 
+	for(int i = 0; i < g_BannedWords.Length; i++)
+	{
+		char bannedWord[MAX_MESSAGE_LENGTH];
+		g_BannedWords.GetString(i, bannedWord, sizeof(bannedWord));
+		// if the message starts with the banned word
+		if (StrContains(message, bannedWord) == 0)
+		{
+			return Plugin_Continue;
+		}
+	}
+
 	int team = GetClientTeam(author);
 	char teamName[MAX_TEAM_NAME];
 	teamName = GetTeamNameEx(team);
-	char cMessage[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-	FormatEx(cMessage, sizeof(cMessage), "%t", "Server->Discord Message Content",
-											name,
-											message,
+	char tempBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+
+	// name
+	Format(tempBuffer, sizeof(tempBuffer), "%s", name);
+	SanitiseText(tempBuffer, sizeof(tempBuffer));
+	int tempLength = strlen(tempBuffer);
+	char[] sName = new char[tempLength];
+	Format(sName, tempLength, "%s", tempBuffer);
+
+	// message
+	Format(tempBuffer, sizeof(tempBuffer), "%s", message);
+	SanitiseText(tempBuffer, sizeof(tempBuffer));
+	tempLength = strlen(tempBuffer) + 1;
+	char[] sMessage = new char[tempLength];
+	Format(sMessage, tempLength, "%s", tempBuffer);
+
+	char finalContent[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+	FormatEx(finalContent, sizeof(finalContent), "%t", "Server->Discord Message Content",
+											sName,
+											sMessage,
 											author,
 											team,
 											teamName,
 											StrEqual("Spectator", teamName) ? teamName : "", // TODO This seems not adaptable to other games
+											GetClientIpEx(author),
 											GetClientAuthId2(author),
 											GetClientAuthId64(author),
 											GetClientAuthId3(author),
@@ -160,14 +248,14 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 											GetNextMapEx(),
 											g_ServerHostname,
 											g_ServerIpStr,
+											g_ServerPort,
 											GetPlayers(false),
 											g_MaxPlayers
 			);
-	SanitiseText(cMessage, sizeof(cMessage));
 	for (int i = 0; i < g_ChannelListCount; i++)
 	{
-		LogMessage(cMessage);
-		g_Discord.SendMessage(g_ChannelList[i], cMessage);
+		LogMessage(finalContent);
+		g_Discord.SendMessage(g_ChannelList[i], finalContent);
 	}
 	
 	return Plugin_Continue;
@@ -262,7 +350,6 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 		char playersString[3 * 2 + 1];
 		FormatEx(playersString, sizeof(playersString), "%d/%d", GetClientCount(), MaxClients);
 
-		// Source SDK 2013's MAX_MAP_NAME
 		char mapName[MAX_MAP_NAME];
 		GetCurrentMap(mapName, sizeof(mapName));
 
@@ -357,9 +444,10 @@ void UpdatePresence()
 											g_CachedMapName,
 											GetNextMapEx(),
 											g_ServerHostname,
-											g_ServerIpStr
+											g_ServerIpStr,
+											g_ServerPort
 			);
-	g_Discord.SetPresence(Presence_Online, Activity_Custom, playerCountStr);
+	g_Discord.SetPresence(g_ServerIdle ? Presence_Idle : Presence_Online, Activity_Custom, playerCountStr);
 }
 
 public void OnPluginEnd()
