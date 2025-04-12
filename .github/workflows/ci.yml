@@ -81,6 +81,8 @@ jobs:
           cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
           cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
           cp -R chat-processor/scripting/include/** plugin/scripting/include/
+          ls -la plugin/scripting/
+          ls -la plugin/scripting/include
 
       - name: Download morecolors
         uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
