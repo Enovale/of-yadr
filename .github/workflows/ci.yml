@@ -95,7 +95,7 @@ jobs:
           sourcemod: ${{ matrix.sm_version }}
           input: 'plugin/scripting/yadr.sp'
           output: '/tmp/package/addons/sourcemod/plugins'
-          include: 'plugin/scripting/include/'
+          includes: 'plugin/scripting/include/'
 
       - name: Create package
         run: |
