@@ -22,15 +22,9 @@ jobs:
           - windows-latest
         sm_version:
           - "1.11"
-          - "latest"
+          - "1.12"
 
         include:
-          - sm_version: latest
-            sm_branch: master
-
-          - sm_version: "1.11"
-            sm_branch: "1.11-dev"
-
           - os: windows-latest
             os_short: win
 
