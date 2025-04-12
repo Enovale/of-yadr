@@ -48,47 +48,44 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: plugin
-        run: |
-          mkdir -P plugin/scripting/include
 
       - name: Checkout sm-ext-discord
         uses: actions/checkout@v4
         with:
           repository: Enovale/sm-ext-discord
           path: sm-ext-discord
-        run: |
-          cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
 
       - name: Checkout Steamworks
         uses: actions/checkout@v4
         with:
           repository: KyleSanderson/SteamWorks
           path: steamworks
-        run: |
-          cp -R steamworks/Pawn/includes/** plugin/scripting/include/
 
       - name: Checkout ripext
         uses: actions/checkout@v4
         with:
           repository: ErikMinekus/sm-ripext
           path: sm-ripext
-        run: |
-          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
 
       - name: Checkout log4sp
         uses: actions/checkout@v4
         with:
           repository: F1F88/sm-ext-log4sp
           path: sm-ext-log4sp
-        run: |
-          cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
 
       - name: Checkout chat-processor
         uses: actions/checkout@v4
         with:
           repository: KeithGDR/chat-processor
           path: chat-processor
+
+      - name: Copy includes
         run: |
+          mkdir -P plugin/scripting/include
+          cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
+          cp -R steamworks/Pawn/includes/** plugin/scripting/include/
+          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
+          cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
           cp -R chat-processor/scripting/include/** plugin/scripting/include/
 
       - name: Download morecolors
