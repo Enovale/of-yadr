@@ -44,17 +44,72 @@ jobs:
             os_short: linux-debian11
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Build sourcemod plugin
-        uses: maxime1907/action-sourceknight@v1
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
-          cmd: build
+          path: plugin
+        run: |
+          mkdir -P plugin/scripting/include
+
+      - name: Checkout sm-ext-discord
+        uses: actions/checkout@v4
+        with:
+          repository: Enovale/sm-ext-discord
+          path: sm-ext-discord
+        run: |
+          cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
+
+      - name: Checkout Steamworks
+        uses: actions/checkout@v4
+        with:
+          repository: KyleSanderson/SteamWorks
+          path: steamworks
+        run: |
+          cp -R steamworks/Pawn/includes/** plugin/scripting/include/
+
+      - name: Checkout ripext
+        uses: actions/checkout@v4
+        with:
+          repository: ErikMinekus/sm-ripext
+          path: sm-ripext
+        run: |
+          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
+
+      - name: Checkout log4sp
+        uses: actions/checkout@v4
+        with:
+          repository: F1F88/sm-ext-log4sp
+          path: sm-ext-log4sp
+        run: |
+          cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
+
+      - name: Checkout chat-processor
+        uses: actions/checkout@v4
+        with:
+          repository: KeithGDR/chat-processor
+          path: chat-processor
+        run: |
+          cp -R chat-processor/scripting/include/** plugin/scripting/include/
+
+      - name: Download morecolors
+        uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
+        id: downloadfile
+        with:
+          url: "https://github.com/DoctorMcKay/sourcemod-plugins/raw/refs/heads/master/scripting/include/morecolors.inc"
+          target: plugin/scripting/include/
+
+      - name: Compile My plugin
+        uses: SheplyRam/compile-sourcemod-plugin@v1
+        with:
+          sourcemod: ${{ matrix.sm_version }}
+          input: 'plugin/scripting/yadr.sp'
+          output: '/tmp/package/addons/sourcemod/plugins'
+          include: 'plugin/scripting/include/'
 
       - name: Create package
         run: |
           mkdir -p /tmp/package
-          cp -R .sourceknight/package/* /tmp/package
-          cp -R game/addons/sourcemod/translations /tmp/package/common/addons/sourcemod/
+          cp -R plugin/translations /tmp/package/addons/sourcemod/
 
       - name: Upload build archive
         uses: actions/upload-artifact@v4
