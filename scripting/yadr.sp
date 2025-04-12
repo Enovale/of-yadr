@@ -309,17 +309,17 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 
 void UpdateCvars()
 {
-    char channelIdsString[sizeof(g_ChannelList) * sizeof(g_ChannelList[0])];
+    char channelIdsString[sizeof(g_ChannelList) * SNOWFLAKE_SIZE];
     GetConVarString(g_cvChannelIds, channelIdsString, sizeof(channelIdsString));
 
     if (!StrContains(channelIdsString, ";"))
     {
-        FormatEx(g_ChannelList[0], sizeof(g_ChannelList[0]), channelIdsString);
+        FormatEx(g_ChannelList[0], SNOWFLAKE_SIZE, channelIdsString);
         g_ChannelListCount = 1;
     }
     else
     {
-        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), sizeof(g_ChannelList[0]));
+        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), SNOWFLAKE_SIZE);
     }
 
     if (g_ChannelListCount <= 0)
@@ -476,8 +476,8 @@ public void Discord_OnError(Discord discord, const char[] error)
 
 void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 {
-    channel.GetName(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
-    CRemoveTags(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
+    channel.GetName(g_ChannelNameList[index], SNOWFLAKE_SIZE);
+    CRemoveTags(g_ChannelNameList[index], SNOWFLAKE_SIZE);
 
     logger.InfoEx("Outputting to: #%s", g_ChannelNameList[index]);
 
