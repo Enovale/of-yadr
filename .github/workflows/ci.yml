@@ -73,15 +73,6 @@ jobs:
           repository: KeithGDR/chat-processor
           path: chat-processor
 
-      - name: Copy includes
-        run: |
-          mkdir -p plugin/scripting/include
-          cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
-          cp -R steamworks/Pawn/includes/** plugin/scripting/include/
-          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
-          cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
-          cp -R chat-processor/scripting/include/** plugin/scripting/include/
-
       - name: Download morecolors
         uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
         id: downloadfile
@@ -89,13 +80,22 @@ jobs:
           url: "https://github.com/DoctorMcKay/sourcemod-plugins/raw/refs/heads/master/scripting/include/morecolors.inc"
           target: plugin/scripting/include/
 
+      - name: Copy includes
+        run: |
+          cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
+          cp -R steamworks/Pawn/includes/** plugin/scripting/include/
+          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
+          cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
+          cp -R chat-processor/scripting/include/** plugin/scripting/include/
+          cd plugin/scripting/
+
       - name: Compile My plugin
         uses: SheplyRam/compile-sourcemod-plugin@v1
         with:
           sourcemod: ${{ matrix.sm_version }}
-          input: 'plugin/scripting/yadr.sp'
+          input: 'yadr.sp'
           output: '/tmp/package/addons/sourcemod/plugins/yadr.smx'
-          includes: 'plugin/scripting/include/'
+          includes: 'include/'
 
       - name: Create package
         run: |
