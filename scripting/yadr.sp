@@ -314,12 +314,12 @@ void UpdateCvars()
 
     if (!StrContains(channelIdsString, ";"))
     {
-        FormatEx(g_ChannelList[0], sizeof(g_ChannelList[0]), channelIdsString);
+        FormatEx(g_ChannelList[0], SNOWFLAKE_SIZE, channelIdsString);
         g_ChannelListCount = 1;
     }
     else
     {
-        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), sizeof(g_ChannelList[0]));
+        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), SNOWFLAKE_SIZE);
     }
 
     if (g_ChannelListCount <= 0)

@@ -99,7 +99,6 @@ jobs:
 
       - name: Create package
         run: |
-          mkdir -p /tmp/package
           cp -R plugin/translations /tmp/package/addons/sourcemod/
 
       - name: Upload build archive
