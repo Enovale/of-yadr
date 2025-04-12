@@ -72,11 +72,18 @@ public void OnPluginStart()
         ServerCommand("sm_reload_translations");
     }
 
+    AutoExecConfig(true, PLUGIN_SHORTNAME);
+    InitializeLogging(PLUGIN_SHORTNAME, g_cvVerboseEnable.BoolValue ? LogLevel_Debug : LogLevel_Info);
+
+    if (!TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE) && !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE) && !TranslationPhraseExists(TRANSLATION_WEBHOOK_MESSAGE) && !TranslationPhraseExists(TRANSLATION_STATUS) && !TranslationPhraseExists(TRANSLATION_STATUS_PLURAL))
+    {
+        logger.ErrorEx("!!!! No translations are specified, bot won't do anything! Please copy and edit `translations/%s.txt`", PLUGIN_TRANS_FILE);
+    }
+
     g_cvBotToken.AddChangeHook(OnBotTokenChange);
     g_cvChannelIds.AddChangeHook(OnCvarChange);
     g_cvSteamApiKey.AddChangeHook(OnCvarChange);
 
-    AutoExecConfig(true, PLUGIN_SHORTNAME);
     UpdateCvars();
 
     InitializeBannedWords(true);
@@ -100,7 +107,7 @@ public void OnPluginStart()
         }
     }
 
-    LogMessage("Plugin Started!");
+    logger.Info("Plugin Started!");
 }
 
 public void OnConfigsExecuted()
@@ -130,7 +137,7 @@ void GetBannedWords(const char[] path)
     if (!FileExists(path))
     {
         Handle fileHandle = OpenFile(path, "w");
-        WriteFileString(fileHandle, "rtv\nnominate", false);
+        WriteFileString(fileHandle, "!\nrtv\nnominate", false);
         CloseHandle(fileHandle);
     }
 
@@ -178,12 +185,9 @@ void OnMapStartOnce()
 
     if (g_BotReady && TranslationPhraseExists(TRANSLATION_MAP_CHANGE_EVENT))
     {
-        char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-        FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_MAP_CHANGE_EVENT,
-                 g_CachedMapName,
-                 g_ServerHostname);
-
-        SendContent(eventBuffer);
+        SendToDiscordEx(TRANSLATION_MAP_CHANGE_EVENT,
+                        g_CachedMapName,
+                        g_ServerHostname);
     }
 }
 
@@ -223,11 +227,25 @@ public void OnServerExitHibernation()
 public void OnClientPostAdminCheck(int client)
 {
     GetProfilePic(client);
+
+    // TODO These two events should probably at least have the ability to include the player's avatar?
+    SendToDiscordEx(TRANSLATION_PLAYER_CONNECT_EVENT,
+                    GetClientNameEx(client),
+                    g_CachedMapName,
+                    g_ServerHostname);
+}
+
+public void OnClientDisconnect(int client)
+{
+    SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
+                    GetClientNameEx(client),
+                    g_CachedMapName,
+                    g_ServerHostname);
 }
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
-    if (!g_cvServerSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE) || message[0] == '!' || (message[0] == '!' && message[1] == '!'))    // Ignore chat commands
+    if (!g_cvServerSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))    // Ignore chat commands
     {
         return Plugin_Continue;
     }
@@ -284,7 +302,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
              g_ServerPort,
              GetPlayers(false),
              g_MaxPlayers);
-    SendContent(finalContent);
+    SendToDiscord(finalContent, sName, author);
 
     return Plugin_Continue;
 }
@@ -304,6 +322,12 @@ void UpdateCvars()
         g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), sizeof(g_ChannelList[0]));
     }
 
+    if (g_ChannelListCount <= 0)
+    {
+        logger.ThrowErrorEx(LogLevel_Fatal, "No output channels specified! Please add them in your cvar config.");
+        return;
+    }
+
     GetConVarString(g_cvSteamApiKey, g_SteamApiKey, sizeof(g_SteamApiKey));
 }
 
@@ -316,7 +340,7 @@ void SetupDiscordBot()
 
     if (IsNullString(tokenString))
     {
-        LogError("Discord token needs to be filled in, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
+        logger.ThrowErrorEx(LogLevel_Fatal, "Discord token needs to be filled in, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
         return;
     }
 
@@ -326,7 +350,7 @@ void SetupDiscordBot()
 
     if (g_Discord == INVALID_HANDLE || !startedSuccess)
     {
-        LogError("Could not create Discord object, try checking your token, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
+        logger.ThrowErrorEx(LogLevel_Fatal, "Could not create Discord object, try checking your token, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
         return;
     }
 }
@@ -339,9 +363,7 @@ void TeardownDiscordBot()
     {
         if (TranslationPhraseExists(TRANSLATION_BOT_STOP_EVENT))
         {
-            char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-            FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_BOT_STOP_EVENT, g_BotName);
-            SendContent(eventBuffer);
+            SendToDiscordEx(TRANSLATION_BOT_STOP_EVENT, g_BotName);
         }
 
         g_Discord.Stop();
@@ -358,27 +380,20 @@ public void Discord_OnReady(Discord discord)
     discord.GetBotName(g_BotName, sizeof(g_BotName));
     discord.GetBotId(g_BotId, sizeof(g_BotId));
 
-    LogMessage("Bot %s (ID: %s) is ready!", g_BotName, g_BotId);
+    logger.InfoEx("Bot %s (ID: %s) is ready!", g_BotName, g_BotId);
 
     g_Discord.RegisterGlobalSlashCommand("ping", "Check bot latency");
     g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
     // g_Discord.RegisterGlobalSlashCommand("ban", "Ban a player from the server.");
     // g_Discord.RegisterGlobalSlashCommand("kick", "Kick a player from the server.");
 
-    LogMessage("Getting output channel names...");
+    logger.DebugEx("Getting output channel names...");
     for (int i = 0; i < g_ChannelListCount; i++)
     {
         g_Discord.GetChannel(g_ChannelList[i], OnGetChannelCallback, i);
     }
 
     t_Timer = CreateTimer(5.0, UpdatePresenceTimer, 0, TIMER_REPEAT);
-
-    if (TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
-    {
-        char eventBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-        FormatEx(eventBuffer, sizeof(eventBuffer), "%t", TRANSLATION_BOT_START_EVENT, g_BotName);
-        SendContent(eventBuffer);
-    }
 }
 
 public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interaction)
@@ -430,7 +445,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     {
         if (StrEqual(channelId, g_ChannelList[i]))
         {
-            LogMessage(content);
+            logger.Debug(content);
 
             char authorName[MAX_DISCORD_NAME_LENGTH];
             message.GetAuthorName(authorName, sizeof(authorName));
@@ -456,10 +471,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 
 public void Discord_OnError(Discord discord, const char[] error)
 {
-    if (g_cvVerboseEnable.BoolValue)
-    {
-        LogMessage(error);
-    }
+    logger.Debug(error);
 }
 
 void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
@@ -467,16 +479,47 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
     channel.GetName(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
     CRemoveTags(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
 
-    LogMessage("Outputting to: #%s", g_ChannelNameList[index]);
+    logger.InfoEx("Outputting to: #%s", g_ChannelNameList[index]);
+
+    if (index == g_ChannelListCount - 1 && TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
+    {
+        SendToDiscordEx(TRANSLATION_BOT_START_EVENT, g_BotName);
+    }
 }
 
-void SendContent(char[] content)
+void SendToDiscord(char[] content, char[] username, int client)
 {
+    if (!g_Discord.IsRunning())
+    {
+        logger.ErrorEx("Bot not running! Can't send message: %s", content);
+        return;
+    }
+
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        LogMessage(content);
+        logger.Debug(content);
         g_Discord.SendMessage(g_ChannelList[i], content);
     }
+}
+
+/**
+ * Assumed to be an event. First parameter must be a translation phrase.
+ */
+void SendToDiscordEx(any...)
+{
+    if (!g_Discord.IsRunning())
+    {
+        logger.Error("Bot not running! Can't send event.");
+        return;
+    }
+
+    char name[MAX_DISCORD_NAME_LENGTH];
+    FormatEx(name, sizeof(name), "%t", TRANSLATION_WEBHOOK_EVENTS);
+
+    char content[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+    VFormat(content, sizeof(content), "%t", 1);
+
+    SendToDiscord(content, name, -1);
 }
 
 public Action UpdatePresenceTimer(Handle timer, any data)
@@ -510,4 +553,6 @@ void UpdatePresence()
 public void OnPluginEnd()
 {
     TeardownDiscordBot();
+
+    DestroyLogging();
 }

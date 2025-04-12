@@ -1,15 +1,34 @@
 #include <SteamWorks>
 #include <ripext>
 #include <morecolors>
+#include <log4sp>
 
 #define MAX_MAP_NAME    64
 #define MAX_TEAM_NAME   32
 #define MAX_IP_LENGTH   16
 #define MAX_PORT_LENGTH 6
 
+Logger     logger;
+
 char       g_SteamApiKey[33];
 HTTPClient g_HttpClient;
 char       g_SteamAvatars[MAXPLAYERS][100];
+
+void InitializeLogging(char[] name, LogLevel logLevel)
+{
+    if (logger)
+    {
+        return;
+    }
+
+    logger = ServerConsoleSink.CreateLogger(name);
+    logger.SetLevel(logLevel);
+}
+
+void DestroyLogging()
+{
+    delete logger;
+}
 
 char[] GetServerIP()
 {
@@ -21,13 +40,13 @@ char[] GetServerIP()
         FormatEx(ipStr, sizeof(ipStr), "%d.%d.%d.%d", pieces[0], pieces[1], pieces[2], pieces[3]);
     }
     else {
-        LogError("Appears like we had an error on getting the Public IP address.");
+        logger.ErrorEx("Appears like we had an error on getting the Public IP address.");
     }
 
     return ipStr;
 }
 
-public bool IsValidClient(int client)
+bool IsValidClient(int client)
 {
     if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || !IsClientConnected(client) || IsFakeClient(client) || IsClientSourceTV(client))
         return false;
@@ -35,7 +54,7 @@ public bool IsValidClient(int client)
     return true;
 }
 
-public int GetPlayers(bool connecting)
+int GetPlayers(bool connecting)
 {
     int players;
     for (int i = 1; i <= MaxClients; i++)
@@ -80,6 +99,13 @@ char[] GetNextMapEx()
     bool success = GetNextMap(buffer, sizeof(buffer));
     SanitiseText(buffer, sizeof(buffer));
     return success ? buffer : "None";
+}
+
+char[] GetClientNameEx(int client)
+{
+    char nameBuffer[MAX_NAME_LENGTH];
+    GetClientName(client, nameBuffer, sizeof(nameBuffer));
+    return nameBuffer;
 }
 
 char[] GetClientAuthId64(int client)
@@ -134,7 +160,7 @@ void GetProfilePic(int client)
 {
     if (!SteamApiAvailable())
     {
-        LogError("ERROR: Steam API Key not configured.");
+        logger.ErrorEx("Steam API Key not configured.");
         return;
     }
 
@@ -143,7 +169,7 @@ void GetProfilePic(int client)
 
     if (!GetClientAuthId(client, AuthId_SteamID64, steamId, sizeof(steamId), true))
     {
-        LogError("ERROR: Could not get users steam ID. Are they not authenticated yet?");
+        logger.ErrorEx("Could not get users steam ID. Are they not authenticated yet?");
         return;
     }
 
@@ -156,7 +182,7 @@ public void GetProfilePicCallback(HTTPResponse response, any client)
     if (response.Status != HTTPStatus_OK)
     {
         FormatEx(g_SteamAvatars[client], sizeof(g_SteamAvatars[]), "NULL");
-        LogError("ERROR: Failed to reach SteamAPI. Status: %i", response.Status);
+        logger.ErrorEx("Failed to reach SteamAPI. Status: %i", response.Status);
         return;
     }
 
@@ -164,18 +190,21 @@ public void GetProfilePicCallback(HTTPResponse response, any client)
     JSONObject Response  = view_as<JSONObject>(objects.Get("response"));
     JSONArray  players   = view_as<JSONArray>(Response.Get("players"));
     int        playerlen = players.Length;
-    PrintToConsole(0, "[yadr.smx] DEBUG: Client %i SteamAPI Response Length: %i", client, playerlen);
+    logger.DebugEx("Client %i SteamAPI Response Length: %i", client, playerlen);
 
     JSONObject player;
     for (int i = 0; i < playerlen; i++)
     {
         player = view_as<JSONObject>(players.Get(i));
         player.GetString("avatarfull", g_SteamAvatars[client], sizeof(g_SteamAvatars[]));
-        PrintToConsole(0, "[yadr.smx] DEBUG: Client %i has Avatar URL: %s", client, g_SteamAvatars[client]);
+        logger.DebugEx("Client %i has Avatar URL: %s", client, g_SteamAvatars[client]);
         delete player;
     }
 }
 
+/**
+ * Removes source color codes, and discord strings that could obfuscate logs or annoy people
+ */
 void SanitiseText(char[] message, int maxLength, bool removeTags = true)
 {
     // Make sure people can't mention others
