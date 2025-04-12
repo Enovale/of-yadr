@@ -82,7 +82,6 @@ jobs:
 
       - name: Copy includes
         run: |
-          mkdir -p plugin/scripting/include
           cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
           cp -R steamworks/Pawn/includes/** plugin/scripting/include/
           cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
