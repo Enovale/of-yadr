@@ -82,20 +82,20 @@ jobs:
 
       - name: Copy includes
         run: |
+          mkdir -p plugin/scripting/include
           cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
           cp -R steamworks/Pawn/includes/** plugin/scripting/include/
           cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
           cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
           cp -R chat-processor/scripting/include/** plugin/scripting/include/
-          cd plugin/scripting/
 
       - name: Compile My plugin
         uses: SheplyRam/compile-sourcemod-plugin@v1
         with:
           sourcemod: ${{ matrix.sm_version }}
-          input: 'yadr.sp'
+          input: 'plugin/scripting/yadr.sp'
           output: '/tmp/package/addons/sourcemod/plugins/yadr.smx'
-          includes: 'include/'
+          includes: 'plugin/scripting/include/ plugin/scripting/'
 
       - name: Create package
         run: |
