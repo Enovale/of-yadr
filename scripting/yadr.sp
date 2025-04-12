@@ -309,7 +309,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 
 void UpdateCvars()
 {
-    char channelIdsString[sizeof(g_ChannelList) * sizeof(g_ChannelList[0])];
+    char channelIdsString[sizeof(g_ChannelList) * SNOWFLAKE_SIZE];
     GetConVarString(g_cvChannelIds, channelIdsString, sizeof(channelIdsString));
 
     if (!StrContains(channelIdsString, ";"))
