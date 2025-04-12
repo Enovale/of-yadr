@@ -476,8 +476,8 @@ public void Discord_OnError(Discord discord, const char[] error)
 
 void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 {
-    channel.GetName(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
-    CRemoveTags(g_ChannelNameList[index], sizeof(g_ChannelNameList[0]));
+    channel.GetName(g_ChannelNameList[index], SNOWFLAKE_SIZE);
+    CRemoveTags(g_ChannelNameList[index], SNOWFLAKE_SIZE);
 
     logger.InfoEx("Outputting to: #%s", g_ChannelNameList[index]);
 
