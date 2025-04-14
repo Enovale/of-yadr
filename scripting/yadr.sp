@@ -29,7 +29,8 @@ public Plugin myinfo =
 ConVar    g_cvBotToken;
 ConVar    g_cvSteamApiKey;
 ConVar    g_cvChannelIds;
-ConVar    g_cvWebsocketModeEnable;
+ConVar    g_cvWebhookModeEnable;
+ConVar    g_cvWebhookName;
 ConVar    g_cvDiscordSendEnable;
 ConVar    g_cvServerSendEnable;
 ConVar    g_cvDiscordColorCodesEnable;
@@ -59,7 +60,8 @@ public void OnPluginStart()
     g_cvBotToken                = CreateConVar("sm_discord_bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
     g_cvSteamApiKey             = CreateConVar("sm_discord_steam_api_key", "", "Steam Web API key for fetching player avatars.", FCVAR_PROTECTED);
     g_cvChannelIds              = CreateConVar("sm_discord_channel_ids", "", "List of channel IDs, separated by semicolons, to relay between.");
-    g_cvWebsocketModeEnable     = CreateConVar("sm_discord_websocket_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
+    g_cvWebhookModeEnable       = CreateConVar("sm_discord_webhook_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
+    g_cvWebhookName             = CreateConVar("sm_discord_webhook_name", "Yadr Relay", "The name of the webhook to use for webhook output.");
     g_cvDiscordSendEnable       = CreateConVar("sm_discord_dc_send_enable", "1", "Enable discord messages to be sent to the server.");
     g_cvServerSendEnable        = CreateConVar("sm_discord_server_send_enable", "1", "Enable player messages to be sent to discord.");
     g_cvDiscordColorCodesEnable = CreateConVar("sm_discord_dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
@@ -79,10 +81,6 @@ public void OnPluginStart()
     {
         logger.ErrorEx("!!!! No translations are specified, bot won't do anything! Please copy and edit `translations/%s.txt`", PLUGIN_TRANS_FILE);
     }
-
-    g_cvBotToken.AddChangeHook(OnBotTokenChange);
-    g_cvChannelIds.AddChangeHook(OnCvarChange);
-    g_cvSteamApiKey.AddChangeHook(OnCvarChange);
 
     UpdateCvars();
 
@@ -112,6 +110,10 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
+    g_cvBotToken.AddChangeHook(OnBotTokenChange);
+    g_cvChannelIds.AddChangeHook(OnCvarChange);
+    g_cvSteamApiKey.AddChangeHook(OnCvarChange);
+
     CacheFormatVars();
 
     InitializeBannedWords();
@@ -161,9 +163,13 @@ public void OnCvarChange(ConVar convar, char[] oldValue, char[] newValue)
     UpdateCvars();
 }
 
+// TODO This should restart the bot if you change the token but as is it just causes errors on startup
 public void OnBotTokenChange(ConVar convar, char[] oldValue, char[] newValue)
 {
-    SetupDiscordBot();
+    if (!StrEqual(oldValue, newValue))
+    {
+        //SetupDiscordBot();
+    }
 }
 
 public void OnMapStart()
