@@ -270,7 +270,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     int  team = GetClientTeam(author);
     char teamName[MAX_TEAM_NAME];
     teamName = GetTeamNameEx(team);
-    char tempBuffer[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+    char tempBuffer[MAX_DISCORD_MESSAGE_LENGTH];
 
     // name
     Format(tempBuffer, sizeof(tempBuffer), "%s", name);
@@ -306,9 +306,9 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     nextMap          = GetNextMapEx();
     int  playerCount = GetPlayers(false);
 
-    char finalBotContent[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-    char finalWebhookContent[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-    char finalPlayerInfoEventContent[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+    char finalBotContent[MAX_DISCORD_MESSAGE_LENGTH];
+    char finalWebhookContent[MAX_DISCORD_MESSAGE_LENGTH];
+    char finalPlayerInfoEventContent[MAX_DISCORD_MESSAGE_LENGTH];
 
     if (TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
     {
@@ -426,7 +426,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
             char eventName[MAX_DISCORD_NAME_LENGTH];
             FormatEx(eventName, sizeof(eventName), "%t", TRANSLATION_WEBHOOK_EVENTS);
             
-            if ((webhookAvailable ? strlen(finalWebhookContent) + strlen(finalPlayerInfoEventContent) : strlen(finalBotContent) + strlen(finalPlayerInfoEventContent)) < MAX_DISCORD_NITRO_MESSAGE_LENGTH)
+            if ((webhookAvailable ? strlen(finalWebhookContent) + strlen(finalPlayerInfoEventContent) : strlen(finalBotContent) + strlen(finalPlayerInfoEventContent)) < MAX_DISCORD_MESSAGE_LENGTH)
             {
                 Format(webhookAvailable ? finalWebhookContent : finalBotContent, sizeof(finalWebhookContent), "%s\n%s", finalPlayerInfoEventContent, webhookAvailable ? finalWebhookContent : finalBotContent);
             }
@@ -718,7 +718,7 @@ void SendToDiscordEx(any...)
     char name[MAX_DISCORD_NAME_LENGTH];
     FormatEx(name, sizeof(name), "%t", TRANSLATION_WEBHOOK_EVENTS);
 
-    char content[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+    char content[MAX_DISCORD_MESSAGE_LENGTH];
     VFormat(content, sizeof(content), "%t", 1);
 
     SendToDiscord(content, name, -1);
@@ -761,6 +761,13 @@ void UpdatePresence()
 public void OnPluginEnd()
 {
     TeardownDiscordBot();
+
+    for(int i = 0; i < g_ChannelListCount; i++)
+    {
+        delete g_WebhookList[i];
+    }
+
+    delete g_BannedWords;
 
     DestroyLogging();
 }
