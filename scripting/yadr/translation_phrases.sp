@@ -6,6 +6,7 @@
 #define TRANSLATION_MAP_CHANGE_EVENT        "Map Change Event"
 #define TRANSLATION_PLAYER_CONNECT_EVENT    "Player Connect Event"
 #define TRANSLATION_PLAYER_DISCONNECT_EVENT "Player Disconnect Event"
+#define TRANSLATION_PLAYER_INFO_EVENT       "Player Information Event"
 #define TRANSLATION_BOT_START_EVENT         "Bot Starting Event"
 #define TRANSLATION_BOT_STOP_EVENT          "Bot Stopping Event"
 #define TRANSLATION_STATUS                  "Status"

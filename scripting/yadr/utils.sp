@@ -3,10 +3,11 @@
 #include <morecolors>
 #include <log4sp>
 
-#define MAX_MAP_NAME    64
-#define MAX_TEAM_NAME   32
-#define MAX_IP_LENGTH   16
-#define MAX_PORT_LENGTH 6
+#define MAX_MAP_NAME      64
+#define MAX_TEAM_NAME     32
+#define MAX_IP_LENGTH     16
+#define MAX_PORT_LENGTH   6
+#define SHORT_TIME_LENGTH 12
 
 Logger     logger;
 
@@ -67,7 +68,7 @@ int GetPlayers(bool connecting)
 
 char[] FormatShortTime(int time)
 {
-    char Time[12];
+    char Time[SHORT_TIME_LENGTH];
     int  g_iHours   = 0;
     int  g_iMinutes = 0;
     int  g_iSeconds = time;
@@ -154,6 +155,11 @@ char[] GetTeamNameEx(int team)
 bool SteamApiAvailable()
 {
     return !StrEqual(g_SteamApiKey, "", false);
+}
+
+bool WebhookAvailable(DiscordWebhook wh)
+{
+    return wh != INVALID_HANDLE;
 }
 
 void GetProfilePic(int client)
