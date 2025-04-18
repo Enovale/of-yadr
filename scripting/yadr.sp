@@ -234,19 +234,25 @@ public void OnClientPostAdminCheck(int client)
 {
     GetProfilePic(client);
 
-    // TODO These two events should probably at least have the ability to include the player's avatar?
-    SendToDiscordEx(TRANSLATION_PLAYER_CONNECT_EVENT,
-                    GetClientNameEx(client),
-                    g_CachedMapName,
-                    g_ServerHostname);
+    if (TranslationPhraseExists(TRANSLATION_PLAYER_CONNECT_EVENT))
+    {
+        // TODO These two events should probably at least have the ability to include the player's avatar?
+        SendToDiscordEx(TRANSLATION_PLAYER_CONNECT_EVENT,
+                        GetClientNameEx(client),
+                        g_CachedMapName,
+                        g_ServerHostname);
+    }
 }
 
 public void OnClientDisconnect(int client)
 {
-    SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
-                    GetClientNameEx(client),
-                    g_CachedMapName,
-                    g_ServerHostname);
+    if (TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
+    {
+        SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
+                        GetClientNameEx(client),
+                        g_CachedMapName,
+                        g_ServerHostname);
+    }
 }
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
@@ -425,7 +431,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
         {
             char eventName[MAX_DISCORD_NAME_LENGTH];
             FormatEx(eventName, sizeof(eventName), "%t", TRANSLATION_WEBHOOK_EVENTS);
-            
+
             if ((webhookAvailable ? strlen(finalWebhookContent) + strlen(finalPlayerInfoEventContent) : strlen(finalBotContent) + strlen(finalPlayerInfoEventContent)) < MAX_DISCORD_MESSAGE_LENGTH)
             {
                 Format(webhookAvailable ? finalWebhookContent : finalBotContent, sizeof(finalWebhookContent), "%s\n%s", finalPlayerInfoEventContent, webhookAvailable ? finalWebhookContent : finalBotContent);
@@ -539,7 +545,10 @@ public void Discord_OnReady(Discord discord)
     logger.InfoEx("Bot %s (ID: %s) is ready!", g_BotName, g_BotId);
 
     g_Discord.RegisterGlobalSlashCommand("ping", "Check bot latency");
-    g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
+    if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE) && TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+    {
+        g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
+    }
     // g_Discord.RegisterGlobalSlashCommand("ban", "Ban a player from the server.");
     // g_Discord.RegisterGlobalSlashCommand("kick", "Kick a player from the server.");
 
@@ -575,18 +584,79 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     }
     if (strcmp(commandName, "status") == 0)
     {
-        char playersString[3 * 2 + 1];
-        FormatEx(playersString, sizeof(playersString), "%d/%d", GetClientCount(), MaxClients);
-
-        char mapName[MAX_MAP_NAME];
-        GetCurrentMap(mapName, sizeof(mapName));
+        if (!TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE) || !TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+        {
+            return;
+        }
+        
+        char playersString[(3 * 2 + 1) + sizeof("Players ()")];
+        FormatEx(playersString, sizeof(playersString), "Players (%d/%d)", GetClientCount(), MaxClients);
 
         DiscordEmbed embed = new DiscordEmbed();
         embed.SetTitle("Server Status");
-        embed.SetDescription("Current server information");
-        embed.AddField("Players", playersString, true);
-        embed.AddField("Map", mapName, true);
-        embed.SetFooter("Test!");
+        // embed.SetDescription("Current server information");
+        embed.AddField("Map", g_CachedMapName, true);
+
+        if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
+        {
+            char statusOutput[DISCORD_FIELD_LENGTH];
+            for (int i = 1; i <= MaxClients; i++)
+            {
+                if (IsValidClient(i))
+                {
+                    int  team = GetClientTeam(i);
+                    char teamName[MAX_TEAM_NAME];
+                    teamName = GetTeamNameEx(team);
+                    char name[MAX_NAME_LENGTH];
+                    GetClientName(i, name, sizeof(name));
+                    SanitiseText(name, sizeof(name));
+                    int  userId = GetClientUserId(i);
+                    char teamNameIfSpectator[MAX_TEAM_NAME];
+                    teamNameIfSpectator = StrContains(teamName, "Spec", false) == -1 ? "" : teamName;    // TODO This seems not adaptable to other games
+                    char clientIp[MAX_IP_LENGTH];
+                    clientIp = GetClientIpEx(i);
+                    char authId2[MAX_AUTHID_LENGTH];
+                    authId2 = GetClientAuthId2(i);
+                    char authId64[MAX_AUTHID_LENGTH];
+                    authId64 = GetClientAuthId64(i);
+                    char authId3[MAX_AUTHID_LENGTH];
+                    authId3 = GetClientAuthId3(i);
+                    char authIdEngine[MAX_AUTHID_LENGTH];
+                    authIdEngine = GetClientAuthIdEngine(i);
+                    char clientConnectionTime[SHORT_TIME_LENGTH];
+                    clientConnectionTime = GetClientConnectionTime(i);
+                    Format(statusOutput, sizeof(statusOutput), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : statusOutput, TRANSLATION_STATUS_COMMAND_LINE,
+                           name,
+                           userId,
+                           clientIp,
+                           authId2,
+                           authId64,
+                           authId3,
+                           authIdEngine,
+                           clientConnectionTime,
+                           team,
+                           teamName,
+                           teamNameIfSpectator,
+                           g_SteamAvatars[i]);
+                }
+            }
+            embed.AddField(playersString, statusOutput, false);
+        }
+
+        if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+        {
+            char footerStr[DISCORD_FOOTER_LENGTH];
+            Format(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER,
+                   g_CachedMapName,
+                   GetNextMapEx(),
+                   g_ServerHostname,
+                   g_ServerIpStr,
+                   g_ServerPort,
+                   GetPlayers(true),
+                   g_MaxPlayers);
+
+            embed.SetFooter(footerStr);
+        }
 
         interaction.CreateEphemeralResponseEmbed("", embed);
         delete embed;
@@ -762,7 +832,7 @@ public void OnPluginEnd()
 {
     TeardownDiscordBot();
 
-    for(int i = 0; i < g_ChannelListCount; i++)
+    for (int i = 0; i < g_ChannelListCount; i++)
     {
         delete g_WebhookList[i];
     }

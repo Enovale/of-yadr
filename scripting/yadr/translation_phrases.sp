@@ -11,3 +11,5 @@
 #define TRANSLATION_BOT_STOP_EVENT          "Bot Stopping Event"
 #define TRANSLATION_STATUS                  "Status"
 #define TRANSLATION_STATUS_PLURAL           "Status Plural"
+#define TRANSLATION_STATUS_COMMAND_LINE     "Status Command Player Line"
+#define TRANSLATION_STATUS_COMMAND_FOOTER   "Status Command Footer"

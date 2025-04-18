@@ -3,11 +3,15 @@
 #include <morecolors>
 #include <log4sp>
 
-#define MAX_MAP_NAME      64
-#define MAX_TEAM_NAME     32
-#define MAX_IP_LENGTH     16
-#define MAX_PORT_LENGTH   6
-#define SHORT_TIME_LENGTH 12
+#define MAX_MAP_NAME          64
+#define MAX_TEAM_NAME         32
+#define MAX_IP_LENGTH         16
+#define MAX_PORT_LENGTH       6
+#define SHORT_TIME_LENGTH     12
+
+// Limits found here: https://discordjs.guide/popular-topics/embeds.html#notes
+#define DISCORD_FIELD_LENGTH  1025
+#define DISCORD_FOOTER_LENGTH 2049
 
 Logger     logger;
 
@@ -15,7 +19,7 @@ char       g_SteamApiKey[33];
 HTTPClient g_HttpClient;
 char       g_SteamAvatars[MAXPLAYERS][100];
 
-void InitializeLogging(char[] name, LogLevel logLevel)
+stock void InitializeLogging(char[] name, LogLevel logLevel)
 {
     if (logger)
     {
