@@ -66,7 +66,7 @@ public void OnPluginStart()
     g_cvChannelIds              = CreateConVar("sm_discord_channel_ids", "", "List of channel IDs, separated by semicolons, to relay between.");
     g_cvWebhookModeEnable       = CreateConVar("sm_discord_webhook_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
     g_cvWebhookName             = CreateConVar("sm_discord_webhook_name", "Yadr Relay", "The name of the webhook to use for webhook output.");
-    g_cvWebhookUrlOverrides     = CreateConVar("sm_discord_webhook_urls", "", "List of webhook URLs, separated by semicolons, in the same order as `sm_discord_channel_ids`, to use. If the webhook for a channel is left blank, it will be created if the bot has permission to do so.");
+    g_cvWebhookUrlOverrides     = CreateConVar("sm_discord_webhook_urls", "", "List of webhook URLs, separated by semicolons, in the same order as `sm_discord_channel_ids`, to use. If the webhook for a channel is left blank, it will be created if the bot has permission to do so.", FCVAR_PROTECTED);
     g_cvDiscordSendEnable       = CreateConVar("sm_discord_dc_send_enable", "1", "Enable discord messages to be sent to the server.");
     g_cvServerSendEnable        = CreateConVar("sm_discord_server_send_enable", "1", "Enable player messages to be sent to discord.");
     g_cvDiscordColorCodesEnable = CreateConVar("sm_discord_dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
@@ -425,7 +425,15 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
         {
             char eventName[MAX_DISCORD_NAME_LENGTH];
             FormatEx(eventName, sizeof(eventName), "%t", TRANSLATION_WEBHOOK_EVENTS);
-            SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalPlayerInfoEventContent, webhookName, -1);
+            
+            if ((webhookAvailable ? strlen(finalWebhookContent) + strlen(finalPlayerInfoEventContent) : strlen(finalBotContent) + strlen(finalPlayerInfoEventContent)) < MAX_DISCORD_NITRO_MESSAGE_LENGTH)
+            {
+                Format(webhookAvailable ? finalWebhookContent : finalBotContent, sizeof(finalWebhookContent), "%s\n%s", finalPlayerInfoEventContent, webhookAvailable ? finalWebhookContent : finalBotContent);
+            }
+            else
+            {
+                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalPlayerInfoEventContent, webhookName, -1);
+            }
         }
 
         SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], webhookAvailable ? finalWebhookContent : finalBotContent, webhookName, author);
