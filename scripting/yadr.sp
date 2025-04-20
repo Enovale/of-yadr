@@ -1,10 +1,10 @@
 #define PLUGIN_NAME        "Yet Another Discord Relay"
 #define PLUGIN_SHORTNAME   "yadr"
-#define PLUGIN_TRANS_FILE  "yadr.phrases"
+#define PLUGIN_TRANS_FILE  PLUGIN_SHORTNAME... ".phrases"
 #define PLUGIN_AUTHOR      "Enova"
 #define PLUGIN_DESCRIPTION "Discord Relay with a focus on clean compact output and performance."
 #define PLUGIN_VERSION     "1.0"
-#define PLUGIN_URL         "https://github.com/Enovale/of-yadr"
+#define PLUGIN_URL         "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
 
 #include <sourcemod>
 #include <sdktools>
@@ -37,6 +37,9 @@ ConVar         g_cvServerSendEnable;
 ConVar         g_cvDiscordColorCodesEnable;
 
 ConVar         g_cvVerboseEnable;
+
+// Cached internal convars
+ConVar         g_cvFragLimit;
 
 // 255 channel list limit is arbitrary
 char           g_ChannelList[255][SNOWFLAKE_SIZE];
@@ -73,11 +76,10 @@ public void OnPluginStart()
 
     g_cvVerboseEnable           = CreateConVar("sm_discord_verbose", "0", "Enable verbose logging for the discord backend.");
 
-    if (g_cvVerboseEnable.BoolValue)
-    {
-        // TODO This seems bad but also I don't know why translations don't reload anyway
-        ServerCommand("sm_reload_translations");
-    }
+    g_cvFragLimit               = FindConVar("mp_fraglimit");
+
+    // TODO This seems bad but also I don't know why translations don't reload anyway
+    ServerCommand("sm_reload_translations");
 
     AutoExecConfig(true, PLUGIN_SHORTNAME);
     InitializeLogging(PLUGIN_SHORTNAME, g_cvVerboseEnable.BoolValue ? LogLevel_Debug : LogLevel_Info);
@@ -131,7 +133,7 @@ void InitializeBannedWords(bool force = false)
 
     g_BannedWords = new ArrayList(ByteCountToCells(MAX_MESSAGE_LENGTH));
     char filePath[PLATFORM_MAX_PATH];
-    BuildPath(Path_SM, filePath, sizeof(filePath), "configs/%s_banned_prefixes.txt", PLUGIN_SHORTNAME);
+    BuildPath(Path_SM, filePath, sizeof(filePath), "configs/" ... PLUGIN_SHORTNAME... "_banned_prefixes.txt");
     GetBannedWords(filePath);
 }
 
@@ -312,17 +314,19 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     nextMap          = GetNextMapEx();
     int  playerCount = GetPlayers(false);
 
-    char finalBotContent[MAX_DISCORD_MESSAGE_LENGTH];
-    char finalWebhookContent[MAX_DISCORD_MESSAGE_LENGTH];
-    char finalPlayerInfoEventContent[MAX_DISCORD_MESSAGE_LENGTH];
+    char botContent[MAX_DISCORD_MESSAGE_LENGTH];
+    char webhookContent[MAX_DISCORD_MESSAGE_LENGTH];
+    char playerInfoEventContent[MAX_DISCORD_MESSAGE_LENGTH];
 
+    int  frags = GetClientFrags(author);
     if (TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
     {
-        FormatEx(finalBotContent, sizeof(finalBotContent), "%t", TRANSLATION_SERVER_DISCORD_MESSAGE,
+        FormatEx(botContent, sizeof(botContent), "%t", TRANSLATION_SERVER_DISCORD_MESSAGE,
                  sName,
                  sMessage,
                  author,
                  userId,
+                 frags,
                  team,
                  teamName,
                  teamNameIfSpectator,
@@ -339,16 +343,18 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  g_ServerIpStr,
                  g_ServerPort,
                  playerCount,
-                 g_MaxPlayers);
+                 g_MaxPlayers,
+                 g_cvFragLimit.IntValue);
     }
 
     if (TranslationPhraseExists(TRANSLATION_WEBHOOK_MESSAGE))
     {
-        FormatEx(finalWebhookContent, sizeof(finalWebhookContent), "%t", TRANSLATION_WEBHOOK_MESSAGE,
+        FormatEx(webhookContent, sizeof(webhookContent), "%t", TRANSLATION_WEBHOOK_MESSAGE,
                  sName,
                  sMessage,
                  author,
                  userId,
+                 frags,
                  team,
                  teamName,
                  teamNameIfSpectator,
@@ -365,16 +371,18 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  g_ServerIpStr,
                  g_ServerPort,
                  playerCount,
-                 g_MaxPlayers);
+                 g_MaxPlayers,
+                 g_cvFragLimit.IntValue);
     }
 
     if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT))
     {
-        FormatEx(finalPlayerInfoEventContent, sizeof(finalPlayerInfoEventContent), "%t", TRANSLATION_PLAYER_INFO_EVENT,
+        FormatEx(playerInfoEventContent, sizeof(playerInfoEventContent), "%t", TRANSLATION_PLAYER_INFO_EVENT,
                  sName,
                  sMessage,
                  author,
                  userId,
+                 frags,
                  team,
                  teamName,
                  teamNameIfSpectator,
@@ -391,7 +399,8 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  g_ServerIpStr,
                  g_ServerPort,
                  playerCount,
-                 g_MaxPlayers);
+                 g_MaxPlayers,
+                 g_cvFragLimit.IntValue);
     }
 
     for (int i = 0; i < g_ChannelListCount; i++)
@@ -407,6 +416,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                      sMessage,
                      author,
                      userId,
+                     frags,
                      team,
                      teamName,
                      teamNameIfSpectator,
@@ -423,26 +433,25 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                      g_ServerIpStr,
                      g_ServerPort,
                      playerCount,
-                     g_MaxPlayers);
+                     g_MaxPlayers,
+                     g_cvFragLimit.IntValue);
         }
 
-        logger.InfoEx("Old: %s, New: %s", g_ChannelLastAuthorList[i], authIdEngine);
+        char finalContent[MAX_DISCORD_MESSAGE_LENGTH];
+        finalContent = webhookAvailable ? webhookContent : botContent;
         if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT) && !StrEqual(g_ChannelLastAuthorList[i], authIdEngine))
         {
-            char eventName[MAX_DISCORD_NAME_LENGTH];
-            FormatEx(eventName, sizeof(eventName), "%t", TRANSLATION_WEBHOOK_EVENTS);
-
-            if ((webhookAvailable ? strlen(finalWebhookContent) + strlen(finalPlayerInfoEventContent) : strlen(finalBotContent) + strlen(finalPlayerInfoEventContent)) < MAX_DISCORD_MESSAGE_LENGTH)
+            if ((webhookAvailable ? strlen(webhookContent) + strlen(playerInfoEventContent) : strlen(botContent) + strlen(playerInfoEventContent)) < MAX_DISCORD_MESSAGE_LENGTH)
             {
-                Format(webhookAvailable ? finalWebhookContent : finalBotContent, sizeof(finalWebhookContent), "%s\n%s", finalPlayerInfoEventContent, webhookAvailable ? finalWebhookContent : finalBotContent);
+                Format(finalContent, sizeof(finalContent), "%s\n%s", playerInfoEventContent, finalContent);
             }
             else
             {
-                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalPlayerInfoEventContent, webhookName, -1);
+                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], playerInfoEventContent, webhookName, -1);
             }
         }
 
-        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], webhookAvailable ? finalWebhookContent : finalBotContent, webhookName, author);
+        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalContent, webhookName, author);
         g_ChannelLastAuthorList[i] = authIdEngine;
     }
 
@@ -502,7 +511,7 @@ void SetupDiscordBot()
 
     if (IsNullString(tokenString))
     {
-        logger.ThrowErrorEx(LogLevel_Fatal, "Discord token needs to be filled in, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
+        logger.ThrowErrorEx(LogLevel_Fatal, "Discord token needs to be filled in, you can set it in cfg/sourcemod/" ... PLUGIN_SHORTNAME... ".cfg");
         return;
     }
 
@@ -512,7 +521,7 @@ void SetupDiscordBot()
 
     if (g_Discord == INVALID_HANDLE || !startedSuccess)
     {
-        logger.ThrowErrorEx(LogLevel_Fatal, "Could not create Discord object, try checking your token, you can set it in cfg/sourcemod/%s.cfg", PLUGIN_SHORTNAME);
+        logger.ThrowErrorEx(LogLevel_Fatal, "Could not create Discord object, try checking your token, you can set it in cfg/sourcemod/" ... PLUGIN_SHORTNAME... ".cfg");
         return;
     }
 }
@@ -584,22 +593,55 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     }
     if (strcmp(commandName, "status") == 0)
     {
-        if (!TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE) || !TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+        if (!TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE) || !TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
         {
             return;
         }
-        
+
         char playersString[(3 * 2 + 1) + sizeof("Players ()")];
         FormatEx(playersString, sizeof(playersString), "Players (%d/%d)", GetClientCount(), MaxClients);
 
+        int  playerCount = GetPlayers(true);
+
+        char nextMap[MAX_MAP_NAME];
+        GetNextMap(nextMap, sizeof(nextMap));
+
         DiscordEmbed embed = new DiscordEmbed();
-        embed.SetTitle("Server Status");
-        // embed.SetDescription("Current server information");
-        embed.AddField("Map", g_CachedMapName, true);
+        if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE))
+        {
+            char title[DISCORD_FIELD_LENGTH];
+            FormatEx(title, sizeof(title), "%t", TRANSLATION_STATUS_COMMAND_TITLE,
+                     g_CachedMapName,
+                     nextMap,
+                     g_ServerHostname,
+                     g_ServerIpStr,
+                     g_ServerPort,
+                     playerCount,
+                     g_MaxPlayers,
+                     g_cvFragLimit.IntValue);
+
+            embed.SetTitle(title);
+        }
+
+        if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_DESC))
+        {
+            char description[DISCORD_FIELD_LENGTH];
+            FormatEx(description, sizeof(description), "%t", TRANSLATION_STATUS_COMMAND_DESC,
+                     g_CachedMapName,
+                     nextMap,
+                     g_ServerHostname,
+                     g_ServerIpStr,
+                     g_ServerPort,
+                     playerCount,
+                     g_MaxPlayers,
+                     g_cvFragLimit.IntValue);
+
+            embed.SetDescription(description);
+        }
 
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
         {
-            char statusOutput[DISCORD_FIELD_LENGTH];
+            char playerLines[DISCORD_FIELD_LENGTH];
             for (int i = 1; i <= MaxClients; i++)
             {
                 if (IsValidClient(i))
@@ -625,35 +667,46 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
                     authIdEngine = GetClientAuthIdEngine(i);
                     char clientConnectionTime[SHORT_TIME_LENGTH];
                     clientConnectionTime = GetClientConnectionTime(i);
-                    Format(statusOutput, sizeof(statusOutput), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : statusOutput, TRANSLATION_STATUS_COMMAND_LINE,
-                           name,
-                           userId,
-                           clientIp,
-                           authId2,
-                           authId64,
-                           authId3,
-                           authIdEngine,
-                           clientConnectionTime,
-                           team,
-                           teamName,
-                           teamNameIfSpectator,
-                           g_SteamAvatars[i]);
+                    FormatEx(playerLines, sizeof(playerLines), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : playerLines, TRANSLATION_STATUS_COMMAND_LINE,
+                             name,
+                             i,
+                             userId,
+                             clientIp,
+                             authId2,
+                             authId64,
+                             authId3,
+                             authIdEngine,
+                             clientConnectionTime,
+                             GetClientFrags(i),
+                             team,
+                             teamName,
+                             teamNameIfSpectator,
+                             g_SteamAvatars[i],
+                             g_CachedMapName,
+                             nextMap,
+                             g_ServerHostname,
+                             g_ServerIpStr,
+                             g_ServerPort,
+                             playerCount,
+                             g_MaxPlayers,
+                             g_cvFragLimit.IntValue);
                 }
             }
-            embed.AddField(playersString, statusOutput, false);
+            embed.AddField(playersString, playerLines, false);
         }
 
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
         {
             char footerStr[DISCORD_FOOTER_LENGTH];
-            Format(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER,
-                   g_CachedMapName,
-                   GetNextMapEx(),
-                   g_ServerHostname,
-                   g_ServerIpStr,
-                   g_ServerPort,
-                   GetPlayers(true),
-                   g_MaxPlayers);
+            FormatEx(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER,
+                     g_CachedMapName,
+                     nextMap,
+                     g_ServerHostname,
+                     g_ServerIpStr,
+                     g_ServerPort,
+                     playerCount,
+                     g_MaxPlayers,
+                     g_cvFragLimit.IntValue);
 
             embed.SetFooter(footerStr);
         }
@@ -693,13 +746,26 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     char content[MAX_MESSAGE_LENGTH];
     message.GetContent(content, sizeof(content));
 
-    char authorName[MAX_DISCORD_NAME_LENGTH];
-    message.GetAuthorName(authorName, sizeof(authorName));
+    char username[MAX_DISCORD_NAME_LENGTH];
+    message.GetAuthorName(username, sizeof(username));
+
+    char displayName[MAX_DISCORD_NAME_LENGTH];
+    message.GetAuthorDisplayName(displayName, sizeof(displayName));
+
+    char nickname[MAX_DISCORD_NAME_LENGTH];
+    message.GetAuthorNickname(nickname, sizeof(nickname));
+
+    if (StrEqual(nickname, ""))
+    {
+        nickname = displayName;
+    }
 
     if (!g_cvDiscordColorCodesEnable.BoolValue)
     {
-        CRemoveTags(authorName, sizeof(authorName));
+        CRemoveTags(username, sizeof(username));
         CRemoveTags(content, sizeof(content));
+        CRemoveTags(displayName, sizeof(displayName));
+        CRemoveTags(nickname, sizeof(nickname));
     }
 
     for (int i = 0; i < g_ChannelListCount; i++)
@@ -710,7 +776,10 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 
             int authorDescriminator = message.GetAuthorDiscriminator();
 
-            CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE, authorName,
+            CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE,
+                            username,
+                            displayName,
+                            nickname,
                             content,
                             g_ChannelNameList[i],
                             authorId,
@@ -752,6 +821,10 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
     if (g_cvWebhookModeEnable.BoolValue && WebhookAvailable(webhook))
     {
         webhook.SetName(username);
+        if (client > 0)
+        {
+            webhook.SetAvatarUrl(g_SteamAvatars[client]);
+        }
         g_Discord.ExecuteWebhook(webhook, content);
     }
     else
@@ -820,6 +893,7 @@ void UpdatePresence()
              clientCount == 1 ? TRANSLATION_STATUS : TRANSLATION_STATUS_PLURAL,
              clientCount,
              g_MaxPlayers,
+             g_cvFragLimit.IntValue,
              g_CachedMapName,
              GetNextMapEx(),
              g_ServerHostname,
