@@ -3,7 +3,7 @@
 #define PLUGIN_TRANS_FILE  PLUGIN_SHORTNAME... ".phrases"
 #define PLUGIN_AUTHOR      "Enova"
 #define PLUGIN_DESCRIPTION "Discord Relay with a focus on clean compact output and performance."
-#define PLUGIN_VERSION     "1.0"
+#define PLUGIN_VERSION     "0.1.0"
 #define PLUGIN_URL         "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
 
 #include <sourcemod>
