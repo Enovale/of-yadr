@@ -100,6 +100,11 @@ char[] GetClientConnectionTime(int client)
     return FormatShortTime(RoundToFloor(GetClientTime(client)));
 }
 
+int GetClientPing(int client)
+{
+    return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iPing", _, client);
+}
+
 char[] GetNextMapEx()
 {
     char buffer[MAX_MAP_NAME];

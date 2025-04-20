@@ -310,6 +310,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     authIdEngine = GetClientAuthIdEngine(author);
     char clientConnectionTime[SHORT_TIME_LENGTH];
     clientConnectionTime = GetClientConnectionTime(author);
+    int  clientPing      = GetClientPing(author);
     char nextMap[MAX_MAP_NAME];
     nextMap          = GetNextMapEx();
     int  playerCount = GetPlayers(false);
@@ -336,6 +337,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  authId3,
                  authIdEngine,
                  clientConnectionTime,
+                 clientPing,
                  g_SteamAvatars[author],
                  g_CachedMapName,
                  nextMap,
@@ -364,6 +366,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  authId3,
                  authIdEngine,
                  clientConnectionTime,
+                 clientPing,
                  g_SteamAvatars[author],
                  g_CachedMapName,
                  nextMap,
@@ -392,6 +395,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                  authId3,
                  authIdEngine,
                  clientConnectionTime,
+                 clientPing,
                  g_SteamAvatars[author],
                  g_CachedMapName,
                  nextMap,
@@ -426,6 +430,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
                      authId3,
                      authIdEngine,
                      clientConnectionTime,
+                     clientPing,
                      g_SteamAvatars[author],
                      g_CachedMapName,
                      nextMap,
@@ -677,6 +682,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
                              authId3,
                              authIdEngine,
                              clientConnectionTime,
+                             GetClientPing(i),
                              GetClientFrags(i),
                              team,
                              teamName,
