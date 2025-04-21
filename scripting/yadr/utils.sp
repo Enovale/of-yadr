@@ -95,6 +95,12 @@ char[] FormatShortTime(int time)
     return Time;
 }
 
+// TODO This seems not adaptable to other games
+char[] GetClientTeamNameIfSpectator(char[] teamName)
+{
+    return StrContains(teamName, "Spec", false) == -1 ? "" : teamName
+}
+
 char[] GetClientConnectionTime(int client)
 {
     return FormatShortTime(RoundToFloor(GetClientTime(client)));
@@ -113,10 +119,14 @@ char[] GetNextMapEx()
     return success ? buffer : "None";
 }
 
-char[] GetClientNameEx(int client)
+char[] GetClientNameEx(int client, bool sanitise = false)
 {
     char nameBuffer[MAX_NAME_LENGTH];
     GetClientName(client, nameBuffer, sizeof(nameBuffer));
+    if (sanitise)
+    {
+        SanitiseText(nameBuffer, sizeof(nameBuffer));
+    }
     return nameBuffer;
 }
 

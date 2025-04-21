@@ -4,6 +4,7 @@ char g_ServerIpStr[MAX_IP_LENGTH];
 int  g_ServerPort;
 char g_ServerHostname[64];
 char g_CachedMapName[MAX_MAP_NAME];
+char g_CachedNextMapName[MAX_MAP_NAME];
 int  g_MaxPlayers;
 
 void CacheFormatVars()
@@ -23,6 +24,14 @@ void CacheMapName()
 {
     GetCurrentMap(g_CachedMapName, sizeof(g_CachedMapName));
     SanitiseText(g_CachedMapName, sizeof(g_CachedMapName));
+}
+
+void CacheNextMapName()
+{
+    if (GetNextMap(g_CachedNextMapName, sizeof(g_CachedNextMapName)))
+    {
+        SanitiseText(g_CachedNextMapName, sizeof(g_CachedNextMapName));
+    }
 }
 
 void CacheExplicitMapName(const char[] mapName)
