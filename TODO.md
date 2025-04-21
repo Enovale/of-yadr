@@ -1,4 +1,4 @@
 # TODO
 
-- Find a way to nicely document the translation format
-- Add automatically creating webhook if it doesn't exist already
+- Translation documentation works at least, but it really sucks to read.
+- Add bridging discord messages between other channels the bot is attached to.

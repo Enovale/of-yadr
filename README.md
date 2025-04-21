@@ -7,7 +7,7 @@ Proper readme WIP
 > Absolutely no testing has been done with other configurations, though they should theoretically work.
 > I would love reports to be made in the Issues section if issues are found in other games/setups
 
-Until 1.0, the Translation format will break FREQUENTLY, and this can cause sensitive info to be leaked accidentally.
+Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause sensitive info to be leaked accidentally.
 
 # Requirements
 

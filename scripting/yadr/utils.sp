@@ -111,14 +111,6 @@ int GetClientPing(int client)
     return GetEntProp(GetPlayerResourceEntity(), Prop_Send, "m_iPing", _, client);
 }
 
-char[] GetNextMapEx()
-{
-    char buffer[MAX_MAP_NAME];
-    bool success = GetNextMap(buffer, sizeof(buffer));
-    SanitiseText(buffer, sizeof(buffer));
-    return success ? buffer : "None";
-}
-
 char[] GetClientNameEx(int client, bool sanitise = false)
 {
     char nameBuffer[MAX_NAME_LENGTH];

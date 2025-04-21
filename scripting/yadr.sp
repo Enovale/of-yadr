@@ -1,11 +1,58 @@
-#define PLUGIN_NAME          "Yet Another Discord Relay"
-#define PLUGIN_SHORTNAME     "yadr"
-#define PLUGIN_TRANS_FILE    PLUGIN_SHORTNAME... ".phrases"
-#define PLUGIN_CONVAR_PREFIX "sm_" ... PLUGIN_SHORTNAME... "_"
-#define PLUGIN_AUTHOR        "Enova"
-#define PLUGIN_DESCRIPTION   "Discord Relay with a focus on clean compact output and performance."
-#define PLUGIN_VERSION       "0.1.0"
-#define PLUGIN_URL           "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
+#define PLUGIN_NAME            "Yet Another Discord Relay"
+#define PLUGIN_SHORTNAME       "yadr"
+#define PLUGIN_TRANS_FILE      PLUGIN_SHORTNAME... ".phrases"
+#define PLUGIN_CONVAR_PREFIX   "sm_" ... PLUGIN_SHORTNAME... "_"
+#define PLUGIN_AUTHOR          "Enova"
+#define PLUGIN_DESCRIPTION     "Discord Relay with a focus on clean compact output and performance."
+#define PLUGIN_VERSION         "0.1.0"
+#define PLUGIN_URL             "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
+
+// param 1 - client index variable
+#define FormatServerBlock(%1) g_CachedMapName,        \
+                              g_CachedNextMapName,    \
+                              g_ServerHostname,       \
+                              g_ServerIpStr,          \
+                              g_ServerPort,           \
+                              %1,                     \
+                              g_MaxPlayers,           \
+                              g_cvFragLimit.IntValue, \
+                              g_BotName,              \
+                              g_BotId
+
+// param 1 - client index variable
+#define FormatPlayerBlock(%1)        GetClientNameEx(%1, true),             \
+                                     %1,                                    \
+                                     GetClientUserId(%1),                   \
+                                     GetClientFrags(%1),                    \
+                                     team,                                  \
+                                     teamName,                              \
+                                     GetClientTeamNameIfSpectator(teamName),\
+                                     GetClientIpEx(%1),                     \
+                                     GetClientAuthId2(%1),                  \
+                                     GetClientAuthId64(%1),                 \
+                                     GetClientAuthId3(%1),                  \
+                                     GetClientAuthIdEngine(%1),             \
+                                     GetClientConnectionTime(%1),           \
+                                     GetClientPing(%1),                     \
+                                     g_SteamAvatars[%1]
+
+// param 1 - client index variable
+#define FormatPlayerMessageBlock(%1) sMessage,             \
+                                     sName,                \
+                                     %1,                   \
+                                     userId,               \
+                                     frags,                \
+                                     team,                 \
+                                     teamName,             \
+                                     teamNameIfSpectator,  \
+                                     clientIp,             \
+                                     authId2,              \
+                                     authId64,             \
+                                     authId3,              \
+                                     authIdEngine,         \
+                                     clientConnectionTime, \
+                                     clientPing,           \
+                                     g_SteamAvatars[%1]
 
 #include <sourcemod>
 #include <sdktools>
@@ -203,17 +250,7 @@ void OnMapOrPluginStart()
 
     if (g_BotReady && TranslationPhraseExists(TRANSLATION_MAP_CHANGE_EVENT))
     {
-        SendToDiscordEx(TRANSLATION_MAP_CHANGE_EVENT,
-                        g_CachedMapName,
-                        g_CachedNextMapName,
-                        g_ServerHostname,
-                        g_ServerIpStr,
-                        g_ServerPort,
-                        GetPlayers(false),
-                        g_MaxPlayers,
-                        g_cvFragLimit.IntValue,
-                        g_BotName,
-                        g_BotId);
+        SendToDiscordEx(TRANSLATION_MAP_CHANGE_EVENT, FormatServerBlock(GetPlayers(false)));
     }
 }
 
@@ -261,31 +298,8 @@ public void OnClientPostAdminCheck(int client)
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_CONNECT_EVENT,
-                        GetClientNameEx(client, true),
-                        client,
-                        GetClientUserId(client),
-                        GetClientFrags(client),
-                        team,
-                        teamName,
-                        GetClientTeamNameIfSpectator(teamName),
-                        GetClientIpEx(client),
-                        GetClientAuthId2(client),
-                        GetClientAuthId64(client),
-                        GetClientAuthId3(client),
-                        GetClientAuthIdEngine(client),
-                        GetClientConnectionTime(client),
-                        GetClientPing(client),
-                        g_SteamAvatars[client],
-                        g_CachedMapName,
-                        g_CachedNextMapName,
-                        g_ServerHostname,
-                        g_ServerIpStr,
-                        g_ServerPort,
-                        GetPlayers(false),
-                        g_MaxPlayers,
-                        g_cvFragLimit.IntValue,
-                        g_BotName,
-                        g_BotId);
+                        FormatPlayerBlock(client),
+                        FormatServerBlock(GetPlayers(false)));
     }
 }
 
@@ -297,31 +311,8 @@ public void OnClientDisconnect(int client)
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
-                        GetClientNameEx(client, true),
-                        client,
-                        GetClientUserId(client),
-                        GetClientFrags(client),
-                        team,
-                        teamName,
-                        GetClientTeamNameIfSpectator(teamName),
-                        GetClientIpEx(client),
-                        GetClientAuthId2(client),
-                        GetClientAuthId64(client),
-                        GetClientAuthId3(client),
-                        GetClientAuthIdEngine(client),
-                        GetClientConnectionTime(client),
-                        GetClientPing(client),
-                        g_SteamAvatars[client],
-                        g_CachedMapName,
-                        g_CachedNextMapName,
-                        g_ServerHostname,
-                        g_ServerIpStr,
-                        g_ServerPort,
-                        GetPlayers(false),
-                        g_MaxPlayers,
-                        g_cvFragLimit.IntValue,
-                        g_BotName,
-                        g_BotId);
+                        FormatPlayerBlock(client),
+                        FormatServerBlock(GetPlayers(false)));
     }
 }
 
@@ -389,94 +380,22 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
     if (TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
     {
         FormatEx(botContent, sizeof(botContent), "%t", TRANSLATION_SERVER_DISCORD_MESSAGE,
-                 sName,
-                 sMessage,
-                 author,
-                 userId,
-                 frags,
-                 team,
-                 teamName,
-                 teamNameIfSpectator,
-                 clientIp,
-                 authId2,
-                 authId64,
-                 authId3,
-                 authIdEngine,
-                 clientConnectionTime,
-                 clientPing,
-                 g_SteamAvatars[author],
-                 g_CachedMapName,
-                 g_CachedNextMapName,
-                 g_ServerHostname,
-                 g_ServerIpStr,
-                 g_ServerPort,
-                 playerCount,
-                 g_MaxPlayers,
-                 g_cvFragLimit.IntValue,
-                 g_BotName,
-                 g_BotId);
+                 FormatPlayerMessageBlock(author),
+                 FormatServerBlock(playerCount));
     }
 
     if (TranslationPhraseExists(TRANSLATION_WEBHOOK_MESSAGE))
     {
         FormatEx(webhookContent, sizeof(webhookContent), "%t", TRANSLATION_WEBHOOK_MESSAGE,
-                 sName,
-                 sMessage,
-                 author,
-                 userId,
-                 frags,
-                 team,
-                 teamName,
-                 teamNameIfSpectator,
-                 clientIp,
-                 authId2,
-                 authId64,
-                 authId3,
-                 authIdEngine,
-                 clientConnectionTime,
-                 clientPing,
-                 g_SteamAvatars[author],
-                 g_CachedMapName,
-                 g_CachedNextMapName,
-                 g_ServerHostname,
-                 g_ServerIpStr,
-                 g_ServerPort,
-                 playerCount,
-                 g_MaxPlayers,
-                 g_cvFragLimit.IntValue,
-                 g_BotName,
-                 g_BotId);
+                 FormatPlayerMessageBlock(author),
+                 FormatServerBlock(playerCount));
     }
 
     if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT))
     {
         FormatEx(playerInfoEventContent, sizeof(playerInfoEventContent), "%t", TRANSLATION_PLAYER_INFO_EVENT,
-                 sName,
-                 sMessage,
-                 author,
-                 userId,
-                 frags,
-                 team,
-                 teamName,
-                 teamNameIfSpectator,
-                 clientIp,
-                 authId2,
-                 authId64,
-                 authId3,
-                 authIdEngine,
-                 clientConnectionTime,
-                 clientPing,
-                 g_SteamAvatars[author],
-                 g_CachedMapName,
-                 g_CachedNextMapName,
-                 g_ServerHostname,
-                 g_ServerIpStr,
-                 g_ServerPort,
-                 playerCount,
-                 g_MaxPlayers,
-                 g_cvFragLimit.IntValue,
-                 g_BotName,
-                 g_BotId);
+                 FormatPlayerMessageBlock(author),
+                 FormatServerBlock(playerCount));
     }
 
     for (int i = 0; i < g_ChannelListCount; i++)
@@ -488,32 +407,8 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
         if (webhookAvailable)
         {
             FormatEx(webhookName, sizeof(webhookName), "%t", TRANSLATION_WEBHOOK_NAME,
-                     sName,
-                     sMessage,
-                     author,
-                     userId,
-                     frags,
-                     team,
-                     teamName,
-                     teamNameIfSpectator,
-                     clientIp,
-                     authId2,
-                     authId64,
-                     authId3,
-                     authIdEngine,
-                     clientConnectionTime,
-                     clientPing,
-                     g_SteamAvatars[author],
-                     g_CachedMapName,
-                     g_CachedNextMapName,
-                     g_ServerHostname,
-                     g_ServerIpStr,
-                     g_ServerPort,
-                     playerCount,
-                     g_MaxPlayers,
-                     g_cvFragLimit.IntValue,
-                     g_BotName,
-                     g_BotId);
+                     FormatPlayerMessageBlock(author),
+                     FormatServerBlock(playerCount));
         }
 
         char finalContent[MAX_DISCORD_MESSAGE_LENGTH];
@@ -623,17 +518,7 @@ void TeardownDiscordBot()
     {
         if (TranslationPhraseExists(TRANSLATION_BOT_STOP_EVENT))
         {
-            SendToDiscordEx(TRANSLATION_BOT_STOP_EVENT,
-                            g_CachedMapName,
-                            g_CachedNextMapName,
-                            g_ServerHostname,
-                            g_ServerIpStr,
-                            g_ServerPort,
-                            GetPlayers(false),
-                            g_MaxPlayers,
-                            g_cvFragLimit.IntValue,
-                            g_BotName,
-                            g_BotId);
+            SendToDiscordEx(TRANSLATION_BOT_STOP_EVENT, FormatServerBlock(GetPlayers(false)));
         }
 
         g_Discord.Stop();
@@ -698,17 +583,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE))
         {
             char title[DISCORD_FIELD_LENGTH];
-            FormatEx(title, sizeof(title), "%t", TRANSLATION_STATUS_COMMAND_TITLE,
-                     g_CachedMapName,
-                     g_CachedNextMapName,
-                     g_ServerHostname,
-                     g_ServerIpStr,
-                     g_ServerPort,
-                     playerCount,
-                     g_MaxPlayers,
-                     g_cvFragLimit.IntValue,
-                     g_BotName,
-                     g_BotId);
+            FormatEx(title, sizeof(title), "%t", TRANSLATION_STATUS_COMMAND_TITLE, FormatServerBlock(GetPlayers(false)));
 
             embed.SetTitle(title);
         }
@@ -716,17 +591,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_DESC))
         {
             char description[DISCORD_FIELD_LENGTH];
-            FormatEx(description, sizeof(description), "%t", TRANSLATION_STATUS_COMMAND_DESC,
-                     g_CachedMapName,
-                     g_CachedNextMapName,
-                     g_ServerHostname,
-                     g_ServerIpStr,
-                     g_ServerPort,
-                     playerCount,
-                     g_MaxPlayers,
-                     g_cvFragLimit.IntValue,
-                     g_BotName,
-                     g_BotId);
+            FormatEx(description, sizeof(description), "%t", TRANSLATION_STATUS_COMMAND_DESC, FormatServerBlock(GetPlayers(false)));
 
             embed.SetDescription(description);
         }
@@ -742,29 +607,8 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
                     char teamName[MAX_TEAM_NAME];
                     teamName = GetTeamNameEx(team);
                     FormatEx(playerLines, sizeof(playerLines), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : playerLines, TRANSLATION_STATUS_COMMAND_LINE,
-                             GetClientNameEx(i, true),
-                             i,
-                             GetClientUserId(i),
-                             GetClientIpEx(i),
-                             GetClientAuthId2(i),
-                             GetClientAuthId64(i),
-                             GetClientAuthId3(i),
-                             GetClientAuthIdEngine(i),
-                             GetClientConnectionTime(i),
-                             GetClientPing(i),
-                             GetClientFrags(i),
-                             team,
-                             teamName,
-                             GetClientTeamNameIfSpectator(teamName),
-                             g_SteamAvatars[i],
-                             g_CachedMapName,
-                             g_CachedNextMapName,
-                             g_ServerHostname,
-                             g_ServerIpStr,
-                             g_ServerPort,
-                             playerCount,
-                             g_MaxPlayers,
-                             g_cvFragLimit.IntValue);
+                             FormatPlayerBlock(i),
+                             FormatServerBlock(playerCount));
                 }
             }
             embed.AddField(playersString, playerLines, false);
@@ -773,17 +617,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
         {
             char footerStr[DISCORD_FOOTER_LENGTH];
-            FormatEx(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER,
-                     g_CachedMapName,
-                     g_CachedNextMapName,
-                     g_ServerHostname,
-                     g_ServerIpStr,
-                     g_ServerPort,
-                     playerCount,
-                     g_MaxPlayers,
-                     g_cvFragLimit.IntValue,
-                     g_BotName,
-                     g_BotId);
+            FormatEx(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER, FormatServerBlock(playerCount));
 
             embed.SetFooter(footerStr);
         }
@@ -806,11 +640,14 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     {
         for (int i = 0; i < g_ChannelListCount; i++)
         {
-            char webhookId[SNOWFLAKE_SIZE];
-            g_WebhookList[i].GetId(webhookId, sizeof(webhookId));
-            if (StrEqual(channelId, g_ChannelList[i]) && !StrEqual(webhookId, authorId))
+            if (WebhookAvailable(g_WebhookList[i]))
             {
-                g_ChannelLastAuthorList[i] = authorId;
+                char webhookId[SNOWFLAKE_SIZE];
+                g_WebhookList[i].GetId(webhookId, sizeof(webhookId));
+                if (StrEqual(channelId, g_ChannelList[i]) && !StrEqual(webhookId, authorId))
+                {
+                    g_ChannelLastAuthorList[i] = authorId;
+                }
             }
         }
     }
@@ -862,16 +699,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
                             authorId,
                             authorDescriminator,
                             channelId,
-                            g_CachedMapName,
-                            g_CachedNextMapName,
-                            g_ServerHostname,
-                            g_ServerIpStr,
-                            g_ServerPort,
-                            GetPlayers(false),
-                            g_MaxPlayers,
-                            g_cvFragLimit.IntValue,
-                            g_BotName,
-                            g_BotId);
+                            FormatServerBlock(GetPlayers(false)));
             break;
         }
     }
@@ -891,17 +719,7 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 
     if (index == g_ChannelListCount - 1 && TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
     {
-        SendToDiscordEx(TRANSLATION_BOT_START_EVENT,
-                        g_CachedMapName,
-                        g_CachedNextMapName,
-                        g_ServerHostname,
-                        g_ServerIpStr,
-                        g_ServerPort,
-                        GetPlayers(false),
-                        g_MaxPlayers,
-                        g_cvFragLimit.IntValue,
-                        g_BotName,
-                        g_BotId);
+        SendToDiscordEx(TRANSLATION_BOT_START_EVENT, FormatServerBlock(GetPlayers(false)));
     }
 }
 
@@ -961,10 +779,7 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
     if (g_cvWebhookModeEnable.BoolValue && WebhookAvailable(webhook))
     {
         webhook.SetName(username);
-        if (client > 0)
-        {
-            webhook.SetAvatarUrl(g_SteamAvatars[client]);
-        }
+        webhook.SetAvatarUrl(client > 0 ? g_SteamAvatars[client] : "");
         g_Discord.ExecuteWebhook(webhook, content);
     }
     else
@@ -999,17 +814,7 @@ void SendToDiscordEx(any...)
     }
 
     char name[MAX_DISCORD_NAME_LENGTH];
-    FormatEx(name, sizeof(name), "%t", TRANSLATION_WEBHOOK_EVENTS,
-             g_CachedMapName,
-             g_CachedNextMapName,
-             g_ServerHostname,
-             g_ServerIpStr,
-             g_ServerPort,
-             GetPlayers(false),
-             g_MaxPlayers,
-             g_cvFragLimit.IntValue,
-             g_BotName,
-             g_BotId);
+    FormatEx(name, sizeof(name), "%t", TRANSLATION_WEBHOOK_EVENTS, FormatServerBlock(GetPlayers(false)));
 
     char content[MAX_DISCORD_MESSAGE_LENGTH];
     VFormat(content, sizeof(content), "%t", 1);
@@ -1052,16 +857,7 @@ void UpdatePresence()
     int  playerCount = GetPlayers(false);
     FormatEx(playerCountStr, sizeof(playerCountStr), "%t",
              playerCount == 1 ? TRANSLATION_STATUS : TRANSLATION_STATUS_PLURAL,
-             g_CachedMapName,
-             g_CachedNextMapName,
-             g_ServerHostname,
-             g_ServerIpStr,
-             g_ServerPort,
-             playerCount,
-             g_MaxPlayers,
-             g_cvFragLimit.IntValue,
-             g_BotName,
-             g_BotId);
+             FormatServerBlock(playerCount));
     g_Discord.SetPresence(g_ServerIdle ? Presence_Idle : Presence_Online, Activity_Custom, playerCountStr);
 }
 

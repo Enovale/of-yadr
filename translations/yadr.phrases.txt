@@ -1,108 +1,163 @@
-/*
+/**
  * Any phrases used on the server side can use color codes listed here: https://forums.alliedmods.net/showthread.php?t=185016
  * Note that any format variable can only be used once in a phrase.
+ * 
+ * -----------
+ * There are 4 types of format params that are used across these phrases.
+ * 
+ * If multiple blocks are in a row you will have to increase the index
+ * of the variable you want by the size of the previous block.
+ * 
+ * All blocks are followed by a Server Info Block unless specified otherwise.
+ * -----------
+ * Discord Message Info block:
+ * {1:s}  Author Username
+ * {2:s}  Author Display Name
+ * {3:s}  Author Nickname (Relative to the guild the message was sent in)
+ * {4:s}  Content of the message 
+ * {5:s}  Name of the channel the message was sent in
+ * {6:s}  Author ID
+ * {7:d}  Author Descriminator
+ * {8:s}  Channel ID
+ * 
+ * Player Info/Message Block (Size 15/16):
+ * {1:s}  Content of the sent message (This is missing in Info blocks, so all following params are subtracted by 1)
+ * {2:s}  Client Name
+ * {3:d}  Client Index
+ * {4:d}  Client User ID
+ * {5:d}  Client Frag Count
+ * {6:d}  Client Team Number
+ * {7:s}  Client Team Name
+ * {8:s}  Client Team Name (Or blank if the name does not contain "Spec")
+ * {9:s}  Client IP Address
+ * {10:s} Client SteamID2
+ * {11:s} Client SteamID64
+ * {12:s} Client SteamID3
+ * {13:s} Client SteamIDEngine
+ * {14:s} Client Time Connected to the server
+ * {15:d} Client Ping
+ * {16:s} Client Avatar Url
+ * 
+ * Server Info Block (Size 8):
+ * {1:s}  Current Map Name
+ * {2:s}  Next Map Name
+ * {3:s}  Server Display Name (hostname)
+ * {4:s}  Server Public IP
+ * {5:d}  Server Hosted Port
+ * {6:d}  Currently Active Player Count
+ * {7:d}  Max Visible Player Count
+ * {8:d}  Current value of mp_fraglimit
+ * [The Server Info Block is always followed by the Discord Bot Info Block]
+ * 
+ * Discord Bot Info Block (Size 2):
+ * {1:s}  Bot Display Name
+ * {2:s}  Bot User ID
 */
 
 "Phrases"
 {
     "Status"
     {
-        "#format" "{1:d},{2:d},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
-        "en"      "{1}/{2} player connected."
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
+        "en"      "{6}/{7} player connected."
     }
     "Status Plural"
     {
-        "#format" "{1:d},{2:d},{3:d},{4:s},{5:s},{6:s},{7:s},{8:d}"
-        "en"      "{1}/{2} players connected."
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
+        "en"      "{6}/{7} players connected."
     }
     "Status Command Title"
     {
-        "#format" "{1:s},{2:d},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Server Status For {3}"
     }
     "Status Command Description"
     {
-        // Uses the same params as `Status Command Title`.
-        "#format" "{1:s},{2:d},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Here you can server information and a list of currently active players!"
     }
     "Status Command Player Line"
     {
-        "#format" "{1:s},{2:d},{3:d},{4:s},{5:s},{6:s},{7:s},{8:s},{9:s},{10:d},{11:d},{12:d},{13:s},{14:s},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d}"
-        "en"      "- {11} - {1} [{5}](<https://findsteamid.com/steamid/{6}>) {10}"
+        // Player Info Block
+        "#format" "{1:s},{2:d},{3:d},{4:d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
+        "en"      "- {4} - {1} [{10}](<https://findsteamid.com/steamid/{11}>) {14}ms"
     }
     "Status Command Footer"
     {
-        // Uses the same params as `Status Command Title`.
-        "#format" "{1:s},{2:d},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Playing to {8} frags. Current Map: {1}"
     }
     "Discord->Server Message Content"
     {
-        // {1} Author Username, {2} Author Display Name, {3} Author Guild Nickname, {4} Message Content, {5} Channel Name
-        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s}"
+        // Discord Message Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:d},{14:d},{15:d},{16:d},{17:s},{18:s}"
         "en"      "[{blue}DISCORD{default}] {grey}{3}: {green}{4}"
     }
     "Server->Discord Message Content"
     {
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d}"
-        "en"      "[{1}](<https://findsteamid.com/steamid/{11}>): `{2}`"
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "[{2}](<https://findsteamid.com/steamid/{11}>): `{1}`"
     }
     "Webhook Name"
     {
-        // Uses the same params as `Server->Discord Message Content`.
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d}"
-        "en"      "{1}"
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "{2}"
     }
     "Webhook Message"
     {
-        // Uses the same params as `Server->Discord Message Content`.
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d}"
-        "en"      "{2}"
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "`{1}`"
     }
     "Webhook Events"
     {
-        // Uses the same params as `Status Command Title`.
-        "#format" "{1:s},{2:d},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Server Events"
-    }
-    // When many players are grouped together in another phrase, this translation is used
-    "Player List"
-    {
-        "#format" "{1:s},{2:s}"
-        "en"      "{1}, "
     }
     "Player Connect Event"
     {
-        "#format" "{1:s}"
+        // Player Info Block
+        "#format" "{1:s},{2:d},{3:d},{4:d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
         "en"      "-# {1} connected."
     }
     "Player Disconnect Event"
     {
-        "#format" "{1:s}"
+        // Player Info Block
+        "#format" "{1:s},{2:d},{3:d},{4:d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
         "en"      "-# {1} disconnected."
     }
     // Called the first time a player speaks after someone else has spoken
     // Simulate's discord separation of messages sent quickly one after another
     "Player Information Event"
     {
-        // Uses the same params as `Server->Discord Message Content`.
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d}"
-        "en"      "-# Player: {1}"
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "-# {2} | [{10}](<https://findsteamid.com/steamid/{11}>)"
     }
     "Map Change Event"
     {
-        "#format" "{1:s}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "-# Map change: {1}"
     }
     "Bot Stopping Event"
     {
-        "#format" "{1:s}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "-# Bot going down..."
     }
     "Bot Starting Event"
     {
-        "#format" "{1:s}"
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "-# Bot started up."
     }
 }
