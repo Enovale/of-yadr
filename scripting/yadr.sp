@@ -1,45 +1,58 @@
-#define PLUGIN_NAME            "Yet Another Discord Relay"
-#define PLUGIN_SHORTNAME       "yadr"
-#define PLUGIN_TRANS_FILE      PLUGIN_SHORTNAME... ".phrases"
-#define PLUGIN_CONVAR_PREFIX   "sm_" ... PLUGIN_SHORTNAME... "_"
-#define PLUGIN_AUTHOR          "Enova"
-#define PLUGIN_DESCRIPTION     "Discord Relay with a focus on clean compact output and performance."
-#define PLUGIN_VERSION         "0.1.0"
-#define PLUGIN_URL             "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
+#define PLUGIN_NAME          "Yet Another Discord Relay"
+#define PLUGIN_SHORTNAME     "yadr"
+#define PLUGIN_TRANS_FILE    PLUGIN_SHORTNAME... ".phrases"
+#define PLUGIN_CONVAR_PREFIX "sm_" ... PLUGIN_SHORTNAME... "_"
+#define PLUGIN_AUTHOR        "Enova"
+#define PLUGIN_DESCRIPTION   "Discord Relay with a focus on clean compact output and performance."
+#define PLUGIN_VERSION       "0.1.0"
+#define PLUGIN_URL           "https://github.com/Enovale/of-" ... PLUGIN_SHORTNAME
+
+#include <sourcemod>
+#include <sdktools>
+#include <chat-processor>
+#include <discord>
+
+#include "yadr/format_vars.sp"
+#include "yadr/translation_phrases.sp"
+
+#pragma semicolon 1
+#pragma tabsize 2
+#pragma newdecls required
+
+// clang-format off
+// param 1 - client index variable
+#define FormatServerBlock(%0)        g_CachedMapName,        \
+                                     g_CachedNextMapName,    \
+                                     g_ServerHostname,       \
+                                     g_ServerIpStr,          \
+                                     g_ServerPort,           \
+                                     %0,                     \
+                                     g_MaxPlayers,           \
+                                     g_cvFragLimit.IntValue, \
+                                     g_BotName,              \
+                                     g_BotId
 
 // param 1 - client index variable
-#define FormatServerBlock(%1) g_CachedMapName,        \
-                              g_CachedNextMapName,    \
-                              g_ServerHostname,       \
-                              g_ServerIpStr,          \
-                              g_ServerPort,           \
-                              %1,                     \
-                              g_MaxPlayers,           \
-                              g_cvFragLimit.IntValue, \
-                              g_BotName,              \
-                              g_BotId
-
-// param 1 - client index variable
-#define FormatPlayerBlock(%1)        GetClientNameEx(%1, true),             \
-                                     %1,                                    \
-                                     GetClientUserId(%1),                   \
-                                     GetClientFrags(%1),                    \
+#define FormatPlayerBlock(%0)        GetClientNameEx(%0, true),             \
+                                     %0,                                    \
+                                     GetClientUserId(%0),                   \
+                                     GetClientFrags(%0),                    \
                                      team,                                  \
                                      teamName,                              \
                                      GetClientTeamNameIfSpectator(teamName),\
-                                     GetClientIpEx(%1),                     \
-                                     GetClientAuthId2(%1),                  \
-                                     GetClientAuthId64(%1),                 \
-                                     GetClientAuthId3(%1),                  \
-                                     GetClientAuthIdEngine(%1),             \
-                                     GetClientConnectionTime(%1),           \
-                                     GetClientPing(%1),                     \
-                                     g_SteamAvatars[%1]
+                                     GetClientIpEx(%0),                     \
+                                     GetClientAuthId2(%0),                  \
+                                     GetClientAuthId64(%0),                 \
+                                     GetClientAuthId3(%0),                  \
+                                     GetClientAuthIdEngine(%0),             \
+                                     GetClientConnectionTime(%0),           \
+                                     GetClientPing(%0),                     \
+                                     g_SteamAvatars[%0]
 
 // param 1 - client index variable
-#define FormatPlayerMessageBlock(%1) sMessage,             \
+#define FormatPlayerMessageBlock(%0) sMessage,             \
                                      sName,                \
-                                     %1,                   \
+                                     %0,                   \
                                      userId,               \
                                      frags,                \
                                      team,                 \
@@ -52,19 +65,8 @@
                                      authIdEngine,         \
                                      clientConnectionTime, \
                                      clientPing,           \
-                                     g_SteamAvatars[%1]
-
-#include <sourcemod>
-#include <sdktools>
-#include <chat-processor>
-#include <discord>
-
-#include "yadr/format_vars.sp"
-#include "yadr/translation_phrases.sp"
-
-#pragma semicolon 1
-#pragma newdecls required
-
+                                     g_SteamAvatars[%0]
+// clang-format on
 public Plugin myinfo =
 {
     name        = PLUGIN_NAME,
@@ -477,6 +479,7 @@ void UpdateCvars()
             for (int i = 0; i < g_ChannelListCount; i++)
             {
                 g_WebhookList[i] = new DiscordWebhook(g_WebhookUrlsList[i]);
+                g_WebhookList[i].SetAvatarData("");
             }
         }
     }
@@ -493,7 +496,7 @@ void SetupDiscordBot()
     char tokenString[80];
     GetConVarString(g_cvBotToken, tokenString, sizeof(tokenString));
 
-    if (IsNullString(tokenString))
+    if (StrEqual(tokenString, ""))
     {
         logger.ThrowError(LogLevel_Fatal, "Discord token needs to be filled in, you can set it in cfg/sourcemod/" ... PLUGIN_SHORTNAME... ".cfg");
         return;
@@ -629,8 +632,9 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
 public void Discord_OnMessage(Discord discord, DiscordMessage message)
 {
-    char authorId[SNOWFLAKE_SIZE];
-    message.GetAuthorId(authorId, sizeof(authorId));
+    DiscordUser author = message.GetAuthor();
+    char        authorId[SNOWFLAKE_SIZE];
+    author.GetId(authorId, sizeof(authorId));
 
     char channelId[SNOWFLAKE_SIZE];
     message.GetChannelId(channelId, sizeof(channelId));
@@ -661,10 +665,10 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     message.GetContent(content, sizeof(content));
 
     char username[MAX_DISCORD_NAME_LENGTH];
-    message.GetAuthorName(username, sizeof(username));
+    author.GetUsername(username, sizeof(username));
 
     char displayName[MAX_DISCORD_NAME_LENGTH];
-    message.GetAuthorDisplayName(displayName, sizeof(displayName));
+    author.GetGlobalName(displayName, sizeof(displayName));
 
     char nickname[MAX_DISCORD_NAME_LENGTH];
     message.GetAuthorNickname(nickname, sizeof(nickname));
@@ -688,7 +692,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
         {
             logger.Debug(content);
 
-            int authorDescriminator = message.GetAuthorDiscriminator();
+            int authorDescriminator = author.GetDiscriminator();
 
             CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE,
                             username,
@@ -703,6 +707,8 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
             break;
         }
     }
+
+    delete author;
 }
 
 public void Discord_OnError(Discord discord, const char[] error)
@@ -738,6 +744,7 @@ public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, f
         if (g_WebhookList[data] == INVALID_HANDLE && WebhookIsMine(webhookMap[i]))
         {
             g_WebhookList[data] = view_as<DiscordWebhook>(CloneHandle(webhookMap[i]));
+            g_WebhookList[data].SetAvatarData("");
         }
     }
 
