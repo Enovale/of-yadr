@@ -336,7 +336,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 
 public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
 {
-    if(TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
+    if (TranslationPhraseExists(TRANSLATION_PLAYER_BAN_EVENT))
     {
         int  team = GetClientTeam(client);
         char teamName[MAX_TEAM_NAME];
@@ -358,17 +358,21 @@ public Action OnBanIdentity(const char[] identity, int time, int flags, const ch
 
 Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
 {
-    int  client = GetClientOfUserId(GetEventInt(event, "userid"));
-    char newName[MAX_NAME_LENGTH];
-    GetEventString(event, "newname", newName, sizeof(newName));
+    if (TranslationPhraseExists(TRANSLATION_PLAYER_NAME_CHANGE_EVENT))
+    {
+        int  client = GetClientOfUserId(GetEventInt(event, "userid"));
+        char newName[MAX_NAME_LENGTH];
+        GetEventString(event, "newname", newName, sizeof(newName));
 
-    int  team = GetClientTeam(client);
-    char teamName[MAX_TEAM_NAME];
-    teamName = GetTeamNameEx(team);
-    SendToDiscordEx(TRANSLATION_PLAYER_NAME_CHANGE_EVENT,
-                    newName,
-                    FormatPlayerBlock(client),
-                    FormatServerBlock(GetPlayers(false)));
+        int  team = GetClientTeam(client);
+        char teamName[MAX_TEAM_NAME];
+        teamName = GetTeamNameEx(team);
+        SendToDiscordEx(TRANSLATION_PLAYER_NAME_CHANGE_EVENT,
+                        newName,
+                        FormatPlayerBlock(client),
+                        FormatServerBlock(GetPlayers(false)));
+    }
+
     return Plugin_Continue;
 }
 
