@@ -116,11 +116,7 @@ Handle         t_Timer;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-    if (!LibraryExists("log4sp"))
-    {
-        PrintToServer("Loading dummy log4sp!");
-        LoadDummyLoggingNatives();
-    }
+    LoadDummyLoggingNatives();
 
     return APLRes_Success;
 }

@@ -1,8 +1,16 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+#define LOG4SP_NAME "log4sp"
+
 void LoadDummyLoggingNatives()
 {
+    if (LibraryExists(LOG4SP_NAME))
+    {
+        return;
+    }
+
+    LogImpl(LOG4SP_NAME... " was not loaded! Using dummy logging...", false, "WARNING");
     CreateNative("LogLevelToName", DummyNative);
     CreateNative("LogLevelToShortName", DummyNative);
     CreateNative("NameToLogLevel", DummyNative);
@@ -33,23 +41,23 @@ void LoadDummyLoggingNatives()
     CreateNative("Logger.ThrowError", DummyNative);
     CreateNative("Logger.ThrowErrorEx", DummyNative);
     CreateNative("Logger.ThrowErrorAmxTpl", DummyNative);
-    CreateNative("Logger.Trace", MessageLog);
-    CreateNative("Logger.TraceEx", MessageLog);
+    CreateNative("Logger.Trace", TraceLog);
+    CreateNative("Logger.TraceEx", TraceLog);
     CreateNative("Logger.TraceAmxTpl", DummyNative);
-    CreateNative("Logger.Debug", MessageLog);
-    CreateNative("Logger.DebugEx", MessageLog);
+    CreateNative("Logger.Debug", DebugLog);
+    CreateNative("Logger.DebugEx", DebugLog);
     CreateNative("Logger.DebugAmxTpl", DummyNative);
-    CreateNative("Logger.Info", MessageLog);
-    CreateNative("Logger.InfoEx", MessageLog);
+    CreateNative("Logger.Info", InfoLog);
+    CreateNative("Logger.InfoEx", InfoLog);
     CreateNative("Logger.InfoAmxTpl", DummyNative);
-    CreateNative("Logger.Warn", MessageLog);
-    CreateNative("Logger.WarnEx", MessageLog);
+    CreateNative("Logger.Warn", WarnLog);
+    CreateNative("Logger.WarnEx", WarnLog);
     CreateNative("Logger.WarnAmxTpl", DummyNative);
     CreateNative("Logger.Error", ErrorLog);
     CreateNative("Logger.ErrorEx", ErrorLog);
     CreateNative("Logger.ErrorAmxTpl", DummyNative);
-    CreateNative("Logger.Fatal", ErrorLog);
-    CreateNative("Logger.FatalEx", ErrorLog);
+    CreateNative("Logger.Fatal", FatalLog);
+    CreateNative("Logger.FatalEx", FatalLog);
     CreateNative("Logger.FatalAmxTpl", DummyNative);
     CreateNative("Logger.Flush", DummyNative);
     CreateNative("Logger.GetFlushLevel", DummyNative);
@@ -99,30 +107,67 @@ void LoadDummyLoggingNatives()
 
 int MessageLog(Handle plugin, int numParams)
 {
-	LogWrapper(false);
+    LogWrapper(false);
+    return 1;
+}
+
+int TraceLog(Handle plugin, int numParams)
+{
+    LogWrapper(false, "trace");
+    return 1;
+}
+
+int DebugLog(Handle plugin, int numParams)
+{
+    LogWrapper(false, "debug");
+    return 1;
+}
+
+int InfoLog(Handle plugin, int numParams)
+{
+    LogWrapper(false, "info");
+    return 1;
+}
+
+int WarnLog(Handle plugin, int numParams)
+{
+    LogWrapper(false, "warn");
     return 1;
 }
 
 int ErrorLog(Handle plugin, int numParams)
 {
-	LogWrapper(true);
+    LogWrapper(true, "ERROR");
     return 1;
 }
 
-void LogWrapper(bool error, any ...)
+int FatalLog(Handle plugin, int numParams)
 {
-    char buffer[MAX_BUFFER_LENGTH]; 
-	int written;
- 
-	FormatNativeString(0, /* Use an output buffer */
-		2, /* Format param */
-		3, /* Format argument #1 */
-		sizeof(buffer), /* Size of output buffer */
-		written, /* Store # of written bytes */
-		buffer /* Use our buffer */
-		);
+    LogWrapper(true, "FATAL");
+    return 1;
+}
 
-    error ? LogError(buffer) : LogMessage(buffer);
+void LogWrapper(bool error, char[] logLevel = "")
+{
+    char buffer[MAX_BUFFER_LENGTH];
+    int  written;
+
+    FormatNativeString(0,              /* Use an output buffer */
+                       2,              /* Format param */
+                       3,              /* Format argument #1 */
+                       sizeof(buffer), /* Size of output buffer */
+                       written,        /* Store # of written bytes */
+                       buffer          /* Use our buffer */
+    );
+
+    LogImpl(buffer, error, logLevel);
+}
+
+void LogImpl(char[] str, bool error, char[] logLevel = "")
+{
+    char format[128];
+    format = StrEqual(logLevel, "") ? "%s%s" : (error ? "%s: %s" : "[%s] %s");
+    error ? LogError(format, logLevel, str) : LogMessage(format, logLevel, str);
 }
 
 int DummyNative(Handle plugin, int numParams)
