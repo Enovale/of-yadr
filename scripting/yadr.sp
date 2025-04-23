@@ -633,7 +633,8 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
         int  playerCount = GetPlayers(true);
 
-        char playersString[(3 * 2 + 1) + sizeof("Players ()")];
+        // TODO This should not be hardcoded
+        char playersString[(3 * 2 + 1) + 10];
         FormatEx(playersString, sizeof(playersString), "Players (%d/%d)", playerCount, MaxClients);
 
         DiscordEmbed embed = new DiscordEmbed();
