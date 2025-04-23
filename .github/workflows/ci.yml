@@ -16,26 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-20.04
           - ubuntu-latest
-          - windows-2019
-          - windows-latest
         sm_version:
           - "1.11"
           - "1.12"
-
-        include:
-          - os: windows-latest
-            os_short: win
-
-          - os: ubuntu-latest
-            os_short: linux
-
-          - os: windows-2019
-            os_short: win-2019
-
-          - os: ubuntu-latest
-            os_short: linux-debian11
 
     steps:
       - name: Checkout Repository
@@ -103,5 +87,5 @@ jobs:
       - name: Upload build archive
         uses: actions/upload-artifact@v4
         with:
-          name: yadr-${{ matrix.os }}-${{ matrix.sm_version }}
+          name: yadr-${{ matrix.sm_version }}
           path: /tmp/package
