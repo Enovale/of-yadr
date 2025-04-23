@@ -113,7 +113,6 @@ bool           g_ServerIdle;
 bool           g_AllowConnectEvents;
 Handle         t_Timer;
 
-
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
     LoadDummyLoggingNatives();
@@ -156,6 +155,9 @@ public void OnPluginStart()
         delete g_HttpClient;
 
     g_HttpClient = new HTTPClient("https://api.steampowered.com");
+
+    HookEvent("player_changename", OnPlayerChangeName);
+    HookEvent("player_disconnect", OnPlayerDisconnect);
 
     logger.Info("Plugin Started!");
 }
@@ -312,17 +314,62 @@ public void OnClientPostAdminCheck(int client)
     }
 }
 
-public void OnClientDisconnect(int client)
+Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 {
     if (!g_ServerIdle && g_AllowConnectEvents && TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
     {
+        int  client = GetClientOfUserId(GetEventInt(event, "userid"));
+        char reason[MAX_NAME_LENGTH];
+        GetEventString(event, "reason", reason, sizeof(reason));
+
         int  team = GetClientTeam(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
+                        reason,
                         FormatPlayerBlock(client),
                         FormatServerBlock(GetPlayers(false)));
     }
+
+    return Plugin_Continue;
+}
+
+public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
+{
+    if(TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
+    {
+        int  team = GetClientTeam(client);
+        char teamName[MAX_TEAM_NAME];
+        teamName = GetTeamNameEx(team);
+        SendToDiscordEx(TRANSLATION_PLAYER_BAN_EVENT,
+                        time,
+                        reason,
+                        FormatPlayerBlock(client),
+                        FormatServerBlock(GetPlayers(false)));
+    }
+    return Plugin_Continue;
+}
+
+public Action OnBanIdentity(const char[] identity, int time, int flags, const char[] reason, const char[] command, any source)
+{
+    logger.Debug("OnBanIdentity!");
+    return Plugin_Continue;
+}
+
+Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
+{
+    int  client = GetClientOfUserId(GetEventInt(event, "userid"));
+    char newName[MAX_NAME_LENGTH];
+    GetEventString(event, "newname", newName, sizeof(newName));
+
+    int  team = GetClientTeam(client);
+    char teamName[MAX_TEAM_NAME];
+    teamName = GetTeamNameEx(team);
+    SendToDiscordEx(TRANSLATION_PLAYER_NAME_CHANGE_EVENT,
+                    newName,
+                    FormatPlayerBlock(client),
+                    FormatServerBlock(GetPlayers(false)));
+    return Plugin_Continue;
 }
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
