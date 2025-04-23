@@ -15,7 +15,7 @@ Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause se
 - [sm-ext-discord](https://github.com/Enovale/sm-ext-discord) (Using this specific fork is required)
 - [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
 - [ripext](https://forums.alliedmods.net/showthread.php?t=298024)
-- [log4sp](https://github.com/F1F88/sm-ext-log4sp) (Optional, but highly recommended)
+- [log4sp](https://github.com/F1F88/sm-ext-log4sp)
 - [Chat Processor](https://github.com/KeithGDR/chat-processor)
 - [More Colors](https://forums.alliedmods.net/showthread.php?t=185016)
 

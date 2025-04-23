@@ -65,6 +65,7 @@
                                      clientConnectionTime, \
                                      clientPing,           \
                                      g_SteamAvatars[%0]
+
 // clang-format on
 public Plugin myinfo =
 {
@@ -113,13 +114,6 @@ bool           g_ServerIdle;
 bool           g_AllowConnectEvents;
 Handle         t_Timer;
 
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{
-    LoadDummyLoggingNatives();
-
-    return APLRes_Success;
-}
-
 public void OnPluginStart()
 {
     LoadTranslations(PLUGIN_TRANS_FILE);
@@ -134,7 +128,7 @@ public void OnPluginStart()
     g_cvServerSendEnable        = CreateConVar(PLUGIN_CONVAR_PREFIX... "server_send_enable", "1", "Enable player messages to be sent to discord.");
     g_cvDiscordColorCodesEnable = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
     g_cvPresenceUpdateInterval  = CreateConVar(PLUGIN_CONVAR_PREFIX... "presence_interval", "5.0", "How often to update the bot's status (in seconds).");
-    g_cvMapChangeGracePeriod    = CreateConVar(PLUGIN_CONVAR_PREFIX... "map_change_grace", "10.0", "How much time (in seconds) before connect events will be fired after a map starts.");
+    g_cvMapChangeGracePeriod    = CreateConVar(PLUGIN_CONVAR_PREFIX... "map_change_grace", "20.0", "How much time (in seconds) before connect events will be fired after a map starts.");
 
     g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
 
@@ -157,7 +151,7 @@ public void OnPluginStart()
     g_HttpClient = new HTTPClient("https://api.steampowered.com");
 
     HookEvent("player_changename", OnPlayerChangeName);
-    HookEvent("player_disconnect", OnPlayerDisconnect);
+    HookEvent("player_disconnect", OnPlayerDisconnect, EventHookMode_Pre);
 
     logger.Info("Plugin Started!");
 }
@@ -249,12 +243,13 @@ public void OnMapStart()
         TriggerTimer(t_Timer);
     }
 
+    g_AllowConnectEvents = false;
     CreateTimer(g_cvMapChangeGracePeriod.FloatValue, OnMapStartGracePeriod);
 }
 
 void OnMapOrPluginStart()
 {
-    if (g_Discord == INVALID_HANDLE)
+    if (!BotRunning(g_Discord))
     {
         SetupDiscordBot();
     }
@@ -378,7 +373,7 @@ Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
-    if (!g_cvServerSendEnable.BoolValue || !g_Discord.IsRunning() || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
+    if (!g_cvServerSendEnable.BoolValue || !BotRunning(g_Discord) || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
     {
         return Plugin_Continue;
     }
@@ -524,7 +519,7 @@ void UpdateCvars()
 
     if (g_cvWebhookModeEnable.BoolValue && !StrEqual(webhookUrlsString, ""))
     {
-        if (!StrContains(webhookUrlsString, ";"))
+        if (StrContains(webhookUrlsString, ";") < 0)
         {
             g_WebhookList[0] = new DiscordWebhook(webhookUrlsString);
         }
@@ -536,8 +531,11 @@ void UpdateCvars()
 
             for (int i = 0; i < g_ChannelListCount; i++)
             {
-                g_WebhookList[i] = new DiscordWebhook(g_WebhookUrlsList[i]);
-                g_WebhookList[i].SetAvatarData("");
+                if (!StrEqual(g_WebhookUrlsList[i], ""))
+                {
+                    g_WebhookList[i] = new DiscordWebhook(g_WebhookUrlsList[i]);
+                    g_WebhookList[i].SetAvatarData("");
+                }
             }
         }
     }
@@ -834,7 +832,7 @@ bool WebhookIsMine(DiscordWebhook wh)
 
 void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] content, char[] username, int client)
 {
-    if (!g_Discord.IsRunning())
+    if (!BotRunning(g_Discord))
     {
         logger.ErrorEx("Bot not running! Can't send message: %s", content);
         return;
@@ -856,7 +854,7 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
 
 void SendToDiscord(char[] content, char[] username, int client)
 {
-    if (!g_Discord.IsRunning())
+    if (!BotRunning(g_Discord))
     {
         logger.ErrorEx("Bot not running! Can't send message: %s", content);
         return;
@@ -873,7 +871,7 @@ void SendToDiscord(char[] content, char[] username, int client)
  */
 void SendToDiscordEx(any...)
 {
-    if (!g_Discord.IsRunning())
+    if (!BotRunning(g_Discord))
     {
         logger.Error("Bot not running! Can't send event.");
         return;
@@ -904,7 +902,7 @@ public Action UpdatePresenceTimer(Handle timer, any data)
 public Action OnMapStartGracePeriod(Handle timer, any data)
 {
     g_AllowConnectEvents = true;
-    return Plugin_Continue;
+    return Plugin_Handled;
 }
 
 void OnNextMapChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -925,6 +923,11 @@ void UpdatePresence()
              playerCount == 1 ? TRANSLATION_STATUS : TRANSLATION_STATUS_PLURAL,
              FormatServerBlock(playerCount));
     g_Discord.SetPresence(g_ServerIdle ? Presence_Idle : Presence_Online, Activity_Custom, playerCountStr);
+}
+
+bool BotRunning(Discord bot)
+{
+    return bot != INVALID_HANDLE && bot.IsRunning();
 }
 
 public void OnPluginEnd()

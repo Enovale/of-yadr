@@ -1,12 +1,7 @@
 #include <SteamWorks>
 #include <ripext>
 #include <morecolors>
-
-#undef REQUIRE_EXTENSIONS
 #include <log4sp>
-#define REQUIRE_EXTENSIONS
-
-#include "dummy_logging.sp"
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -36,7 +31,11 @@ stock void InitializeLogging(char[] name, LogLevel logLevel)
         return;
     }
 
+    char dailyFileFormat[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, dailyFileFormat, sizeof(dailyFileFormat), "logs/%s.log", name);
+
     logger = ServerConsoleSink.CreateLogger(name);
+    logger.AddSinkEx(new DailyFileSink(dailyFileFormat));
     logger.SetLevel(logLevel);
 }
 
