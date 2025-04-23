@@ -15,9 +15,8 @@
 #include "yadr/format_vars.sp"
 #include "yadr/translation_phrases.sp"
 
-#pragma semicolon 1
-#pragma tabsize 2
 #pragma newdecls required
+#pragma semicolon 1
 
 // clang-format off
 // param 1 - client index variable
@@ -113,6 +112,18 @@ char           g_WebhookName[MAX_DISCORD_NAME_LENGTH];
 bool           g_ServerIdle;
 bool           g_AllowConnectEvents;
 Handle         t_Timer;
+
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    if (!LibraryExists("log4sp"))
+    {
+        PrintToServer("Loading dummy log4sp!");
+        LoadDummyLoggingNatives();
+    }
+
+    return APLRes_Success;
+}
 
 public void OnPluginStart()
 {

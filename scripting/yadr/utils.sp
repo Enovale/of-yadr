@@ -1,7 +1,15 @@
 #include <SteamWorks>
 #include <ripext>
 #include <morecolors>
+
+#undef REQUIRE_EXTENSIONS
 #include <log4sp>
+#define REQUIRE_EXTENSIONS
+
+#include "dummy_logging.sp"
+
+#pragma newdecls required
+#pragma semicolon 1
 
 #define MAX_MAP_NAME          64
 #define MAX_TEAM_NAME         32
@@ -98,7 +106,7 @@ char[] FormatShortTime(int time)
 // TODO This seems not adaptable to other games
 char[] GetClientTeamNameIfSpectator(char[] teamName)
 {
-    return StrContains(teamName, "Spec", false) == -1 ? "" : teamName
+    return StrContains(teamName, "Spec", false) == -1 ? "" : teamName;
 }
 
 char[] GetClientConnectionTime(int client)

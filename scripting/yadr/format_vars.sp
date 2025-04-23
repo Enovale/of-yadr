@@ -1,3 +1,6 @@
+#pragma newdecls required
+#pragma semicolon 1
+
 #include "utils.sp"
 
 char g_ServerIpStr[MAX_IP_LENGTH];

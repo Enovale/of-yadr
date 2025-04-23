@@ -1,3 +1,6 @@
+#pragma newdecls required
+#pragma semicolon 1
+
 #define TRANSLATION_SERVER_DISCORD_MESSAGE  "Server->Discord Message Content"
 #define TRANSLATION_WEBHOOK_MESSAGE         "Webhook Message"
 #define TRANSLATION_WEBHOOK_NAME            "Webhook Name"
