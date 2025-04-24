@@ -155,7 +155,7 @@
     {
         // Player Message Block
         "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "-# {2} | [{9}](<https://findsteamid.com/steamid/{11}>)"
+        "en"      "-# {2} | [{10}](<https://findsteamid.com/steamid/{11}>)"
     }
     "Map Change Event"
     {
