@@ -18,6 +18,9 @@
 #define DISCORD_FIELD_LENGTH  1025
 #define DISCORD_FOOTER_LENGTH 2049
 
+// 256 Is arbitrary, but webhook URLs should definitely never be bigger than that
+#define MAX_AVATAR_URL_LENGTH 256
+
 Logger     logger;
 
 char       g_SteamApiKey[33];

@@ -58,6 +58,54 @@
 
 "Phrases"
 {
+    "Discord->Server Message Content"
+    {
+        // Discord Message Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:d},{14:d},{15:d},{16:d},{17:s},{18:s}"
+        "en"      "[{blue}DISCORD{default}] {grey}{3}: {green}{4}"
+    }
+    /**
+     * DISCORD FACING PHRASES
+     */
+    "Server->Discord Message Content"
+    {
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "[{2}](<https://findsteamid.com/steamid/{11}>): `{1}`"
+    }
+    "Webhook Name"
+    {
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "{2}"
+    }
+    "Webhook Message"
+    {
+        // Player Message Block
+        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
+        "en"      "`{1}`"
+    }
+
+    /**
+     * DISCORD TO DISCORD CHANNEL BRIDGING
+     * Remove these phrases if you want to disable this feature.
+     */
+    "Discord->Discord Message Content"
+    {
+        // Discord Message Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:d},{14:d},{15:d},{16:d},{17:s},{18:s}"
+        "en"      "{4}"
+    }
+    "Discord->Discord Webhook Name"
+    {
+        // Discord Message Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:d},{14:d},{15:d},{16:d},{17:s},{18:s}"
+        "en"      "{3} (#{5})"
+    }
+
+    /**
+     * NON-CHAT RELATED FEATURES
+     */
     "Status"
     {
         // Server Info Block
@@ -85,8 +133,8 @@
     "Status Command Player Line"
     {
         // Player Info Block
-        "#format" "{1:s},{2:d},{3:d},{4:d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
-        "en"      "- {4} - {1} [{9}](<https://findsteamid.com/steamid/{11}>) {14}ms"
+        "#format" "{1:032s},{2:d},{3:d},{4:02d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
+        "en"      "- `{4}` - `{1}` [{9}](<https://findsteamid.com/steamid/{11}>) {14}ms"
     }
     "Status Command Footer"
     {
@@ -94,30 +142,9 @@
         "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Playing to {8} frags. Current Map: {1}"
     }
-    "Discord->Server Message Content"
-    {
-        // Discord Message Info Block
-        "#format" "{1:s},{2:s},{3:s},{4:s},{5:s},{6:s},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:d},{14:d},{15:d},{16:d},{17:s},{18:s}"
-        "en"      "[{blue}DISCORD{default}] {grey}{3}: {green}{4}"
-    }
-    "Server->Discord Message Content"
-    {
-        // Player Message Block
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "[{2}](<https://findsteamid.com/steamid/{11}>): `{1}`"
-    }
-    "Webhook Name"
-    {
-        // Player Message Block
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "{2}"
-    }
-    "Webhook Message"
-    {
-        // Player Message Block
-        "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "`{1}`"
-    }
+    /**
+     * EVENTS
+     */
     "Webhook Events"
     {
         // Server Info Block
@@ -128,26 +155,26 @@
     {
         // Player Info Block
         "#format" "{1:s},{2:d},{3:d},{4:d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:d},{21:d},{22:d},{23:d},{24:s},{25:s}"
-        "en"      "-# {1} connected."
+        "en"      "-# Connected: `{1}`"
     }
     "Player Disconnect Event"
     {
         // {1:s}: Disconnect Reason, Player Info Block
         "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "-# {2} disconnected ({1})"
+        "en"      "-# Disconnected: `{2} ({1})`"
     }
     "Player Banned Event"
     {
         // {1:d} Ban duration, {2:s}: Ban reason, Player Info Block
         "#format" "{1:d},{2:s},{3:s},{4:d},{5:d},{6:d},{7:d},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:s},{16:d},{17:s},{18:s},{19:s},{20:s},{21:s},{22:d},{23:d},{24:d},{25:d},{26:s},{27:s}"
-        "en"      "-# {3} has been **BANNED** for **{1}** minutes."
+        "en"      "-# `{3}` has been **BANNED** for **{1}** minutes."
     }
     // The usual player name variable will be the OLD name.
     "Player Change Name Event"
     {
         // {1:s}: New Name, Player Info Block
         "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "-# {2} changed their name to {1}"
+        "en"      "-# `{2}` changed their name to `{1}`"
     }
     // Called the first time a player speaks after someone else has spoken
     // Simulate's discord separation of messages sent quickly one after another
@@ -155,24 +182,24 @@
     {
         // Player Message Block
         "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "-# {2} | [{10}](<https://findsteamid.com/steamid/{11}>)"
+        "en"      "-# `{2}` | [{10}](<https://findsteamid.com/steamid/{11}>)"
     }
     "Map Change Event"
     {
         // Server Info Block
         "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
-        "en"      "-# Map change: {1}"
-    }
-    "Bot Stopping Event"
-    {
-        // Server Info Block
-        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
-        "en"      "-# Bot going down..."
+        "en"      "-# Map change: `{1}`"
     }
     "Bot Starting Event"
     {
         // Server Info Block
         "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "-# Bot started up."
+    }
+    "Bot Stopping Event"
+    {
+        // Server Info Block
+        "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
+        "en"      "-# Bot going down..."
     }
 }

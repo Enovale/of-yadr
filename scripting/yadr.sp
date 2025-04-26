@@ -20,51 +20,61 @@
 
 // clang-format off
 // param 1 - client index variable
-#define FormatServerBlock(%0)        g_CachedMapName,        \
-                                     g_CachedNextMapName,    \
-                                     g_ServerHostname,       \
-                                     g_ServerIpStr,          \
-                                     g_ServerPort,           \
-                                     %0,                     \
-                                     g_MaxPlayers,           \
-                                     g_cvFragLimit.IntValue, \
-                                     g_BotName,              \
-                                     g_BotId
+#define FormatServerBlock(%0)         g_CachedMapName,        \
+                                      g_CachedNextMapName,    \
+                                      g_ServerHostname,       \
+                                      g_ServerIpStr,          \
+                                      g_ServerPort,           \
+                                      %0,                     \
+                                      g_MaxPlayers,           \
+                                      g_cvFragLimit.IntValue, \
+                                      g_BotName,              \
+                                      g_BotId
 
 // param 1 - client index variable
-#define FormatPlayerBlock(%0)        GetClientNameEx(%0, true),             \
-                                     %0,                                    \
-                                     GetClientUserId(%0),                   \
-                                     GetClientFrags(%0),                    \
-                                     team,                                  \
-                                     teamName,                              \
-                                     GetClientTeamNameIfSpectator(teamName),\
-                                     GetClientIpEx(%0),                     \
-                                     GetClientAuthId2(%0),                  \
-                                     GetClientAuthId64(%0),                 \
-                                     GetClientAuthId3(%0),                  \
-                                     GetClientAuthIdEngine(%0),             \
-                                     GetClientConnectionTime(%0),           \
-                                     GetClientPing(%0),                     \
-                                     g_SteamAvatars[%0]
+#define FormatPlayerBlock(%0)         GetClientNameEx(%0, true),             \
+                                      %0,                                    \
+                                      GetClientUserId(%0),                   \
+                                      GetClientFrags(%0),                    \
+                                      team,                                  \
+                                      teamName,                              \
+                                      GetClientTeamNameIfSpectator(teamName),\
+                                      GetClientIpEx(%0),                     \
+                                      GetClientAuthId2(%0),                  \
+                                      GetClientAuthId64(%0),                 \
+                                      GetClientAuthId3(%0),                  \
+                                      GetClientAuthIdEngine(%0),             \
+                                      GetClientConnectionTime(%0),           \
+                                      GetClientPing(%0),                     \
+                                      g_SteamAvatars[%0]
 
 // param 1 - client index variable
-#define FormatPlayerMessageBlock(%0) sMessage,             \
-                                     sName,                \
-                                     %0,                   \
-                                     userId,               \
-                                     frags,                \
-                                     team,                 \
-                                     teamName,             \
-                                     teamNameIfSpectator,  \
-                                     clientIp,             \
-                                     authId2,              \
-                                     authId64,             \
-                                     authId3,              \
-                                     authIdEngine,         \
-                                     clientConnectionTime, \
-                                     clientPing,           \
-                                     g_SteamAvatars[%0]
+#define FormatPlayerMessageBlock(%0)  sMessage,             \
+                                      sName,                \
+                                      %0,                   \
+                                      userId,               \
+                                      frags,                \
+                                      team,                 \
+                                      teamName,             \
+                                      teamNameIfSpectator,  \
+                                      clientIp,             \
+                                      authId2,              \
+                                      authId64,             \
+                                      authId3,              \
+                                      authIdEngine,         \
+                                      clientConnectionTime, \
+                                      clientPing,           \
+                                      g_SteamAvatars[%0]
+
+// param 1 - channel index
+#define FormatDiscordMessageBlock(%0) username,               \
+                                      displayName,            \
+                                      nickname,               \
+                                      content,                \
+                                      g_ChannelNameList[%0],  \
+                                      authorId,               \
+                                      authorDescriminator,    \
+                                      channelId
 
 // clang-format on
 public Plugin myinfo =
@@ -94,6 +104,7 @@ ConVar         g_cvVerboseEnable;
 ConVar         g_cvFragLimit;
 
 // 255 channel list limit is arbitrary
+// TODO This should really be a map of some kind but currently cannot iterate StringMaps
 char           g_ChannelList[255][SNOWFLAKE_SIZE];
 char           g_ChannelNameList[sizeof(g_ChannelList)][MAX_DISCORD_CHANNEL_NAME_LENGTH];
 char           g_ChannelLastAuthorList[sizeof(g_ChannelList)][MAX_AUTHID_LENGTH];
@@ -123,7 +134,7 @@ public void OnPluginStart()
     g_cvChannelIds              = CreateConVar(PLUGIN_CONVAR_PREFIX... "channel_ids", "", "List of channel IDs, separated by semicolons, to relay between.", FCVAR_PROTECTED);
     g_cvWebhookModeEnable       = CreateConVar(PLUGIN_CONVAR_PREFIX... "webhook_mode_enable", "1", "Enable pretty output with a webhook rather than the more limited bot output.");
     g_cvWebhookName             = CreateConVar(PLUGIN_CONVAR_PREFIX... "webhook_name", "Yadr Relay", "The name of the webhook to use for webhook output.");
-    g_cvWebhookUrlOverrides     = CreateConVar(PLUGIN_CONVAR_PREFIX... "webhook_urls", "", "List of webhook URLs, separated by semicolons, in the same order as `sm_discord_channel_ids`, to use. If the webhook for a channel is left blank, it will be created if the bot has permission to do so.", FCVAR_PROTECTED);
+    g_cvWebhookUrlOverrides     = CreateConVar(PLUGIN_CONVAR_PREFIX... "webhook_urls", "", "List of webhook URLs, separated by semicolons, in the same order as `" ... PLUGIN_CONVAR_PREFIX... "channel_ids`, to use. If the webhook for a channel is left blank, it will be created if the bot has permission to do so.", FCVAR_PROTECTED);
     g_cvDiscordSendEnable       = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_send_enable", "1", "Enable discord messages to be sent to the server.");
     g_cvServerSendEnable        = CreateConVar(PLUGIN_CONVAR_PREFIX... "server_send_enable", "1", "Enable player messages to be sent to discord.");
     g_cvDiscordColorCodesEnable = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
@@ -314,8 +325,9 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
     if (!g_ServerIdle && g_AllowConnectEvents && TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
     {
         int  client = GetClientOfUserId(GetEventInt(event, "userid"));
-        char reason[MAX_NAME_LENGTH];
+        char reason[MAX_MESSAGE_LENGTH];
         GetEventString(event, "reason", reason, sizeof(reason));
+        ReplaceString(reason, sizeof(reason), "\n", " ");
 
         int  team = GetClientTeam(client);
         char teamName[MAX_TEAM_NAME];
@@ -525,8 +537,7 @@ void UpdateCvars()
         }
         else
         {
-            // 256 Is arbitrary, but webhook URLs should definitely never be bigger than that
-            char g_WebhookUrlsList[sizeof(g_ChannelList)][256];
+            char g_WebhookUrlsList[sizeof(g_ChannelList)][MAX_AVATAR_URL_LENGTH];
             ExplodeString(webhookUrlsString, ";", g_WebhookUrlsList, sizeof(g_WebhookUrlsList), sizeof(g_WebhookUrlsList[]));
 
             for (int i = 0; i < g_ChannelListCount; i++)
@@ -713,7 +724,16 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
         }
     }
 
-    if (messageFromSelf || message.IsBot() || !g_cvDiscordSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE))
+    bool inListedChannel;
+    for(int i = 0; i < g_ChannelListCount; i++)
+    {
+        if (StrEqual(channelId, g_ChannelList[i]))
+        {
+            inListedChannel = true;
+        }
+    }
+
+    if (!inListedChannel || messageFromSelf || message.IsBot() || !g_cvDiscordSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE))
     {
         return;
     }
@@ -730,6 +750,9 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     char nickname[MAX_DISCORD_NAME_LENGTH];
     message.GetAuthorNickname(nickname, sizeof(nickname));
 
+    int authorDescriminator = author.GetDiscriminator();
+    int playerCount         = GetPlayers(false);
+
     if (StrEqual(nickname, ""))
     {
         nickname = displayName;
@@ -743,25 +766,42 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
         CRemoveTags(nickname, sizeof(nickname));
     }
 
+    int originalChannel;
     for (int i = 0; i < g_ChannelListCount; i++)
     {
         if (StrEqual(channelId, g_ChannelList[i]))
         {
-            logger.Debug(content);
-
-            int authorDescriminator = author.GetDiscriminator();
-
+            originalChannel = i;
             CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE,
-                            username,
-                            displayName,
-                            nickname,
-                            content,
-                            g_ChannelNameList[i],
-                            authorId,
-                            authorDescriminator,
-                            channelId,
-                            FormatServerBlock(GetPlayers(false)));
-            break;
+                            FormatDiscordMessageBlock(i),
+                            FormatServerBlock(playerCount));
+        }
+    }
+
+    for (int i = 0; i < g_ChannelListCount; i++)
+    {
+        if (i != originalChannel)
+        {
+            if (TranslationPhraseExists(TRANSLATION_DISCORD_DISCORD_MESSAGE))
+            {
+                char webhookName[MAX_DISCORD_NAME_LENGTH];
+                webhookName = nickname;
+                if (TranslationPhraseExists(TRANSLATION_DISCORD_DISCORD_NAME))
+                {
+                    FormatEx(webhookName, sizeof(webhookName), "%t", TRANSLATION_DISCORD_DISCORD_NAME,
+                             FormatDiscordMessageBlock(originalChannel),
+                             FormatServerBlock(playerCount));
+                }
+
+                char finalContent[MAX_DISCORD_MESSAGE_LENGTH];
+                FormatEx(finalContent, sizeof(finalContent), "%t", TRANSLATION_DISCORD_DISCORD_MESSAGE,
+                         FormatDiscordMessageBlock(originalChannel),
+                         FormatServerBlock(playerCount));
+
+                char avatarUrl[MAX_AVATAR_URL_LENGTH];
+                author.GetAvatarUrl(false, avatarUrl, sizeof(avatarUrl));
+                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalContent, webhookName, -1, avatarUrl);
+            }
         }
     }
 
@@ -830,7 +870,7 @@ bool WebhookIsMine(DiscordWebhook wh)
     return StrEqual(g_WebhookName, webhookName) && StrEqual(userId, g_BotId);
 }
 
-void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] content, char[] username, int client)
+void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
     if (!BotRunning(g_Discord))
     {
@@ -838,12 +878,19 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
         return;
     }
 
-    logger.Debug(content);
-
     if (g_cvWebhookModeEnable.BoolValue && WebhookAvailable(webhook))
     {
         webhook.SetName(username);
-        webhook.SetAvatarUrl(client > 0 ? g_SteamAvatars[client] : "");
+        char avatarUrl[MAX_AVATAR_URL_LENGTH];
+        if (StrEqual(avatarUrlOverride, ""))
+        {
+            avatarUrl = client > 0 ? g_SteamAvatars[client] : "";
+        }
+        else
+        {
+            avatarUrl = avatarUrlOverride;
+        }
+        webhook.SetAvatarUrl(avatarUrl);
         g_Discord.ExecuteWebhook(webhook, content);
     }
     else
@@ -852,7 +899,7 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
     }
 }
 
-void SendToDiscord(char[] content, char[] username, int client)
+void SendToDiscord(char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
     if (!BotRunning(g_Discord))
     {
@@ -862,7 +909,7 @@ void SendToDiscord(char[] content, char[] username, int client)
 
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], content, username, client);
+        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], content, username, client, avatarUrlOverride);
     }
 }
 
