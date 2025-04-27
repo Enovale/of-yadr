@@ -1,0 +1,20 @@
+#include "utils.sp"
+#include <discord>
+
+enum struct ChannelInfo
+{
+  char id[SNOWFLAKE_SIZE];
+  char name[MAX_DISCORD_CHANNEL_NAME_LENGTH];
+  char lastAuthor[MAX_AUTHID_LENGTH];
+  DiscordWebhook webhook;
+
+  bool WebhookAvailable()
+  {
+    return this.webhook != INVALID_HANDLE;
+  }
+
+  bool IsEqual(const char[] channelId)
+  {
+    return StrEqual(this.id, channelId);
+  }
+}

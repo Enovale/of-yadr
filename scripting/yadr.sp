@@ -14,6 +14,7 @@
 
 #include "yadr/format_vars.sp"
 #include "yadr/translation_phrases.sp"
+#include "yadr/structs.sp"
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -71,7 +72,7 @@
                                       displayName,            \
                                       nickname,               \
                                       content,                \
-                                      g_ChannelNameList[%0],  \
+                                      g_ChannelList[%0].name, \
                                       authorId,               \
                                       authorDescriminator,    \
                                       channelId
@@ -86,44 +87,39 @@ public Plugin myinfo =
     url         = PLUGIN_URL
 };
 
-ConVar         g_cvBotToken;
-ConVar         g_cvSteamApiKey;
-ConVar         g_cvChannelIds;
-ConVar         g_cvWebhookModeEnable;
-ConVar         g_cvWebhookName;
-ConVar         g_cvWebhookUrlOverrides;
-ConVar         g_cvDiscordSendEnable;
-ConVar         g_cvServerSendEnable;
-ConVar         g_cvDiscordColorCodesEnable;
-ConVar         g_cvPresenceUpdateInterval;
-ConVar         g_cvMapChangeGracePeriod;
+ConVar      g_cvBotToken;
+ConVar      g_cvSteamApiKey;
+ConVar      g_cvChannelIds;
+ConVar      g_cvWebhookModeEnable;
+ConVar      g_cvWebhookName;
+ConVar      g_cvWebhookUrlOverrides;
+ConVar      g_cvDiscordSendEnable;
+ConVar      g_cvServerSendEnable;
+ConVar      g_cvDiscordColorCodesEnable;
+ConVar      g_cvPresenceUpdateInterval;
+ConVar      g_cvMapChangeGracePeriod;
 
-ConVar         g_cvVerboseEnable;
+ConVar      g_cvVerboseEnable;
 
 // Cached internal convars
-ConVar         g_cvFragLimit;
+ConVar      g_cvFragLimit;
 
 // 255 channel list limit is arbitrary
 // TODO This should really be a map of some kind but currently cannot iterate StringMaps
-char           g_ChannelList[255][SNOWFLAKE_SIZE];
-char           g_ChannelNameList[sizeof(g_ChannelList)][MAX_DISCORD_CHANNEL_NAME_LENGTH];
-char           g_ChannelLastAuthorList[sizeof(g_ChannelList)][MAX_AUTHID_LENGTH];
-int            g_ChannelListCount;
+ChannelInfo g_ChannelList[255];
+int         g_ChannelListCount;
 
-// Use g_ChannelListCount to iterate
-DiscordWebhook g_WebhookList[sizeof(g_ChannelList)];
+ArrayList   g_BannedWords;
 
-ArrayList      g_BannedWords;
+Discord     g_Discord;
+bool        g_BotReady;
+char        g_BotName[MAX_DISCORD_NAME_LENGTH];
+char        g_BotId[SNOWFLAKE_SIZE];
+char        g_WebhookName[MAX_DISCORD_NAME_LENGTH];
 
-Discord        g_Discord;
-bool           g_BotReady;
-char           g_BotName[MAX_DISCORD_NAME_LENGTH];
-char           g_BotId[SNOWFLAKE_SIZE];
-char           g_WebhookName[MAX_DISCORD_NAME_LENGTH];
-
-bool           g_ServerIdle;
-bool           g_AllowConnectEvents;
-Handle         t_Timer;
+bool        g_ServerIdle;
+bool        g_AllowConnectEvents;
+Handle      t_Timer;
 
 public void OnPluginStart()
 {
@@ -213,7 +209,7 @@ void GetBannedWords(const char[] path)
     if (!FileExists(path))
     {
         Handle fileHandle = OpenFile(path, "w");
-        WriteFileString(fileHandle, "!\nrtv\nnominate", false);
+        WriteFileString(fileHandle, "/\n!\nrtv\nnominate", false);
         CloseHandle(fileHandle);
     }
 
@@ -467,7 +463,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        bool webhookAvailable = WebhookAvailable(g_WebhookList[i]);
+        bool webhookAvailable = g_ChannelList[i].WebhookAvailable();
         char webhookName[MAX_DISCORD_NAME_LENGTH];
         FormatEx(webhookName, sizeof(webhookName), "%s", sName);
 
@@ -486,7 +482,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
             return Plugin_Continue;
         }
 
-        if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT) && !StrEqual(g_ChannelLastAuthorList[i], authIdEngine))
+        if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT) && !StrEqual(g_ChannelList[i].lastAuthor, authIdEngine))
         {
             if (strlen(finalContent) + strlen(playerInfoEventContent) < MAX_DISCORD_MESSAGE_LENGTH)
             {
@@ -494,12 +490,12 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
             }
             else
             {
-                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], playerInfoEventContent, webhookName, author);
+                SendToDiscordChannel(g_ChannelList[i], playerInfoEventContent, webhookName, author);
             }
         }
 
-        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalContent, webhookName, author);
-        g_ChannelLastAuthorList[i] = authIdEngine;
+        SendToDiscordChannel(g_ChannelList[i], finalContent, webhookName, author);
+        g_ChannelList[i].lastAuthor = authIdEngine;
     }
 
     return Plugin_Continue;
@@ -507,17 +503,23 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
 
 void UpdateCvars()
 {
-    char channelIdsString[sizeof(g_ChannelList) * sizeof(g_ChannelList[])];
+    char channelIdsString[MAX_BUFFER_LENGTH];
     GetConVarString(g_cvChannelIds, channelIdsString, sizeof(channelIdsString));
 
     if (!StrContains(channelIdsString, ";"))
     {
-        FormatEx(g_ChannelList[0], sizeof(g_ChannelList[]), channelIdsString);
+        FormatEx(g_ChannelList[0].id, sizeof(channelIdsString), channelIdsString);
         g_ChannelListCount = 1;
     }
     else
     {
-        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelList, sizeof(g_ChannelList), sizeof(g_ChannelList[]));
+        char g_ChannelIdList[sizeof(g_ChannelList)][SNOWFLAKE_SIZE];
+        g_ChannelListCount = ExplodeString(channelIdsString, ";", g_ChannelIdList, sizeof(g_ChannelIdList), sizeof(g_ChannelIdList[]));
+
+        for (int i = 0; i < g_ChannelListCount; i++)
+        {
+            g_ChannelList[i].id = g_ChannelIdList[i];
+        }
     }
 
     if (g_ChannelListCount <= 0)
@@ -533,7 +535,7 @@ void UpdateCvars()
     {
         if (StrContains(webhookUrlsString, ";") < 0)
         {
-            g_WebhookList[0] = new DiscordWebhook(webhookUrlsString);
+            g_ChannelList[0].webhook = new DiscordWebhook(webhookUrlsString);
         }
         else
         {
@@ -542,10 +544,10 @@ void UpdateCvars()
 
             for (int i = 0; i < g_ChannelListCount; i++)
             {
-                if (!StrEqual(g_WebhookUrlsList[i], ""))
+                if (!g_ChannelList[i].WebhookAvailable())
                 {
-                    g_WebhookList[i] = new DiscordWebhook(g_WebhookUrlsList[i]);
-                    g_WebhookList[i].SetAvatarData("");
+                    g_ChannelList[i].webhook = new DiscordWebhook(g_WebhookUrlsList[i]);
+                    g_ChannelList[i].webhook.SetAvatarData("");
                 }
             }
         }
@@ -612,16 +614,14 @@ public void Discord_OnReady(Discord discord)
     {
         g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
     }
-    // g_Discord.RegisterGlobalSlashCommand("ban", "Ban a player from the server.");
-    // g_Discord.RegisterGlobalSlashCommand("kick", "Kick a player from the server.");
 
     logger.DebugEx("Getting output channel names...");
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        g_Discord.GetChannel(g_ChannelList[i], OnGetChannelCallback, i);
+        g_Discord.GetChannel(g_ChannelList[i].id, OnGetChannelCallback, i);
         if (g_cvWebhookModeEnable.BoolValue)
         {
-            g_Discord.GetChannelWebhooks(g_ChannelList[i], OnGetChannelWebhooks, i);
+            g_Discord.GetChannelWebhooks(g_ChannelList[i].id, OnGetChannelWebhooks, i);
         }
     }
 
@@ -712,22 +712,22 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     {
         for (int i = 0; i < g_ChannelListCount; i++)
         {
-            if (WebhookAvailable(g_WebhookList[i]))
+            if (g_ChannelList[i].WebhookAvailable())
             {
                 char webhookId[SNOWFLAKE_SIZE];
-                g_WebhookList[i].GetId(webhookId, sizeof(webhookId));
-                if (StrEqual(channelId, g_ChannelList[i]) && !StrEqual(webhookId, authorId))
+                g_ChannelList[i].webhook.GetId(webhookId, sizeof(webhookId));
+                if (g_ChannelList[i].IsEqual(channelId) && !StrEqual(webhookId, authorId))
                 {
-                    g_ChannelLastAuthorList[i] = authorId;
+                    g_ChannelList[i].lastAuthor = authorId;
                 }
             }
         }
     }
 
     bool inListedChannel;
-    for(int i = 0; i < g_ChannelListCount; i++)
+    for (int i = 0; i < g_ChannelListCount; i++)
     {
-        if (StrEqual(channelId, g_ChannelList[i]))
+        if (g_ChannelList[i].IsEqual(channelId))
         {
             inListedChannel = true;
         }
@@ -769,7 +769,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     int originalChannel;
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        if (StrEqual(channelId, g_ChannelList[i]))
+        if (g_ChannelList[i].IsEqual(channelId))
         {
             originalChannel = i;
             CPrintToChatAll("%t", TRANSLATION_DISCORD_SERVER_MESSAGE,
@@ -800,7 +800,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
 
                 char avatarUrl[MAX_AVATAR_URL_LENGTH];
                 author.GetAvatarUrl(false, avatarUrl, sizeof(avatarUrl));
-                SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], finalContent, webhookName, -1, avatarUrl);
+                SendToDiscordChannel(g_ChannelList[i], finalContent, webhookName, -1, avatarUrl);
             }
         }
     }
@@ -815,10 +815,10 @@ public void Discord_OnError(Discord discord, const char[] error)
 
 void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 {
-    channel.GetName(g_ChannelNameList[index], sizeof(g_ChannelNameList[]));
-    CRemoveTags(g_ChannelNameList[index], sizeof(g_ChannelNameList[]));
+    channel.GetName(g_ChannelList[index].name, sizeof(g_ChannelList[].name));
+    CRemoveTags(g_ChannelList[index].name, sizeof(g_ChannelList[].name));
 
-    logger.DebugEx("Outputting to: #%s", g_ChannelNameList[index]);
+    logger.DebugEx("Outputting to: #%s", g_ChannelList[index].name);
 
     if (index == g_ChannelListCount - 1 && TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
     {
@@ -838,22 +838,22 @@ public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, f
         user.GetId(userId, sizeof(userId));
         logger.DebugEx("Webhook %s: %s", webhookName, userId);
 
-        if (g_WebhookList[data] == INVALID_HANDLE && WebhookIsMine(webhookMap[i]))
+        if (!g_ChannelList[data].WebhookAvailable() && WebhookIsMine(webhookMap[i]))
         {
-            g_WebhookList[data] = view_as<DiscordWebhook>(CloneHandle(webhookMap[i]));
-            g_WebhookList[data].SetAvatarData("");
+            g_ChannelList[data].webhook = view_as<DiscordWebhook>(CloneHandle(webhookMap[i]));
+            g_ChannelList[data].webhook.SetAvatarData("");
         }
     }
 
-    if (g_WebhookList[data] == INVALID_HANDLE)
+    if (!g_ChannelList[data].WebhookAvailable())
     {
-        g_Discord.CreateWebhook(g_ChannelList[data], g_WebhookName, OnCreateWebhook, data);
+        g_Discord.CreateWebhook(g_ChannelList[data].id, g_WebhookName, OnCreateWebhook, data);
     }
 }
 
 void OnCreateWebhook(Discord discord, DiscordWebhook wh, any data)
 {
-    g_WebhookList[data] = view_as<DiscordWebhook>(CloneHandle(wh));
+    g_ChannelList[data].webhook = view_as<DiscordWebhook>(CloneHandle(wh));
 }
 
 bool WebhookIsMine(DiscordWebhook wh)
@@ -870,7 +870,7 @@ bool WebhookIsMine(DiscordWebhook wh)
     return StrEqual(g_WebhookName, webhookName) && StrEqual(userId, g_BotId);
 }
 
-void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
+void SendToDiscordChannel(const ChannelInfo channel, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
     if (!BotRunning(g_Discord))
     {
@@ -878,8 +878,9 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
         return;
     }
 
-    if (g_cvWebhookModeEnable.BoolValue && WebhookAvailable(webhook))
+    if (g_cvWebhookModeEnable.BoolValue && channel.WebhookAvailable())
     {
+        DiscordWebhook webhook = channel.webhook;
         webhook.SetName(username);
         char avatarUrl[MAX_AVATAR_URL_LENGTH];
         if (StrEqual(avatarUrlOverride, ""))
@@ -895,7 +896,7 @@ void SendToDiscordChannel(char[] channelId, DiscordWebhook webhook, char[] conte
     }
     else
     {
-        g_Discord.SendMessage(channelId, content);
+        g_Discord.SendMessage(channel.id, content);
     }
 }
 
@@ -909,7 +910,7 @@ void SendToDiscord(char[] content, char[] username, int client, char avatarUrlOv
 
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        SendToDiscordChannel(g_ChannelList[i], g_WebhookList[i], content, username, client, avatarUrlOverride);
+        SendToDiscordChannel(g_ChannelList[i], content, username, client, avatarUrlOverride);
     }
 }
 
@@ -935,7 +936,7 @@ void SendToDiscordEx(any...)
     // Clear LastAuthorList because we are sending an event
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        g_ChannelLastAuthorList[i] = "";
+        g_ChannelList[i].lastAuthor = "";
     }
 }
 
@@ -983,7 +984,7 @@ public void OnPluginEnd()
 
     for (int i = 0; i < g_ChannelListCount; i++)
     {
-        delete g_WebhookList[i];
+        delete g_ChannelList[i].webhook;
     }
 
     delete g_BannedWords;

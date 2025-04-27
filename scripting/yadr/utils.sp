@@ -180,11 +180,6 @@ bool SteamApiAvailable()
     return !StrEqual(g_SteamApiKey, "", false);
 }
 
-bool WebhookAvailable(DiscordWebhook wh)
-{
-    return wh != INVALID_HANDLE;
-}
-
 void GetProfilePic(int client)
 {
     if (!SteamApiAvailable())
