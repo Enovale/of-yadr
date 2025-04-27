@@ -614,6 +614,20 @@ public void Discord_OnReady(Discord discord)
     {
         g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
     }
+    g_Discord.RegisterGlobalSlashCommand("psay", "Private message a player on the server.", "0");
+
+    // Register command with multiple options
+    char                     option_names[1][64];
+    char                     option_descriptions[1][256];
+    DiscordCommandOptionType option_types[1];
+    bool                     option_required[1];
+
+    // Player option
+    strcopy(option_names[0], sizeof(option_names[]), "command");
+    strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The command string to send.");
+    option_types[0]    = Option_String;
+    option_required[0] = true;
+    g_Discord.RegisterGlobalSlashCommandWithOptions("consolecommand", "Send an arbitrary command to the server as if it was typed in the console.", "0", option_names, option_descriptions, option_types, option_required, 1);
 
     logger.DebugEx("Getting output channel names...");
     for (int i = 0; i < g_ChannelListCount; i++)
@@ -636,6 +650,16 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     if (strcmp(commandName, "ping") == 0)
     {
         interaction.CreateEphemeralResponse("Pong!");
+    }
+    if (strcmp(commandName, "consolecommand") == 0)
+    {
+        char output[MAX_BUFFER_LENGTH];
+        char input[MAX_BUFFER_LENGTH];
+        interaction.GetOptionValue("command", input, sizeof(input));
+        ServerCommandEx(output, sizeof(output), input);
+
+        Format(output, sizeof(output), "```\n%s```", output);
+        interaction.CreateEphemeralResponse(output);
     }
     if (strcmp(commandName, "status") == 0)
     {
