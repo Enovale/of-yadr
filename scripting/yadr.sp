@@ -11,6 +11,9 @@
 #include <sdktools>
 #include <chat-processor>
 #include <discord>
+#undef REQUIRE_PLUGIN
+#include <sourcebanspp>
+#define REQUIRE_PLUGIN
 
 #include "yadr/format_vars.sp"
 #include "yadr/translation_phrases.sp"
@@ -77,6 +80,8 @@
                                       authorDescriminator,    \
                                       channelId
 
+#define IsCommandEnabled(%0) g_cvCommandEnableBits.IntValue & %0 == %0
+
 // clang-format on
 public Plugin myinfo =
 {
@@ -98,6 +103,7 @@ ConVar      g_cvServerSendEnable;
 ConVar      g_cvDiscordColorCodesEnable;
 ConVar      g_cvPresenceUpdateInterval;
 ConVar      g_cvMapChangeGracePeriod;
+ConVar      g_cvCommandEnableBits;
 
 ConVar      g_cvVerboseEnable;
 
@@ -136,10 +142,13 @@ public void OnPluginStart()
     g_cvDiscordColorCodesEnable = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
     g_cvPresenceUpdateInterval  = CreateConVar(PLUGIN_CONVAR_PREFIX... "presence_interval", "5.0", "How often to update the bot's status (in seconds).");
     g_cvMapChangeGracePeriod    = CreateConVar(PLUGIN_CONVAR_PREFIX... "map_change_grace", "20.0", "How much time (in seconds) before connect events will be fired after a map starts.");
+    g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "TODO");
 
     g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
 
-    g_cvFragLimit               = FindConVar("mp_fraglimit");
+    RegServerCmd(PLUGIN_CONVAR_PREFIX... "delete_commands", DeleteCommandsCmd, "Deletes all slash commands associated with this bot, in case you've changed the enabled commands bits.");
+
+    g_cvFragLimit = FindConVar("mp_fraglimit");
 
     // TODO This seems bad but also I don't know why translations don't reload anyway
     ServerCommand("sm_reload_translations");
@@ -337,7 +346,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
     return Plugin_Continue;
 }
 
-public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
+void OnPlayerBanned(int client, int time, const char[] reason)
 {
     if (TranslationPhraseExists(TRANSLATION_PLAYER_BAN_EVENT))
     {
@@ -350,9 +359,20 @@ public Action OnBanClient(int client, int time, int flags, const char[] reason, 
                         FormatPlayerBlock(client),
                         FormatServerBlock(GetPlayers(false)));
     }
+}
+
+public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
+{
+    OnPlayerBanned(client, time, reason);
     return Plugin_Continue;
 }
 
+public void SBPP_OnBanPlayer(int iAdmin, int iTarget, int iTime, const char[] sReason)
+{
+    OnPlayerBanned(iTarget, iTime, sReason);
+}
+
+// TODO Not used very often and it would be a giant pain to get all the player info from just an identity... We stub this for now
 public Action OnBanIdentity(const char[] identity, int time, int flags, const char[] reason, const char[] command, any source)
 {
     logger.Debug("OnBanIdentity!");
@@ -506,7 +526,7 @@ void UpdateCvars()
     char channelIdsString[MAX_BUFFER_LENGTH];
     GetConVarString(g_cvChannelIds, channelIdsString, sizeof(channelIdsString));
 
-    if (!StrContains(channelIdsString, ";"))
+    if (StrContains(channelIdsString, ";") < 0)
     {
         FormatEx(g_ChannelList[0].id, sizeof(channelIdsString), channelIdsString);
         g_ChannelListCount = 1;
@@ -544,7 +564,7 @@ void UpdateCvars()
 
             for (int i = 0; i < g_ChannelListCount; i++)
             {
-                if (!g_ChannelList[i].WebhookAvailable())
+                if (!g_ChannelList[i].WebhookAvailable() && !StrEqual(g_WebhookUrlsList[i], ""))
                 {
                     g_ChannelList[i].webhook = new DiscordWebhook(g_WebhookUrlsList[i]);
                     g_ChannelList[i].webhook.SetAvatarData("");
@@ -600,6 +620,8 @@ void TeardownDiscordBot()
     delete g_Discord;
 }
 
+#define OPTIONS 2
+
 public void Discord_OnReady(Discord discord)
 {
     g_BotReady = true;
@@ -614,20 +636,39 @@ public void Discord_OnReady(Discord discord)
     {
         g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
     }
-    g_Discord.RegisterGlobalSlashCommand("psay", "Private message a player on the server.", "0");
 
-    // Register command with multiple options
-    char                     option_names[1][64];
-    char                     option_descriptions[1][256];
-    DiscordCommandOptionType option_types[1];
-    bool                     option_required[1];
+    char                     option_names[OPTIONS][64];
+    char                     option_descriptions[OPTIONS][256];
+    DiscordCommandOptionType option_types[OPTIONS];
+    bool                     option_required[OPTIONS];
+    bool                     option_autocomplete[OPTIONS];
 
-    // Player option
-    strcopy(option_names[0], sizeof(option_names[]), "command");
-    strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The command string to send.");
-    option_types[0]    = Option_String;
-    option_required[0] = true;
-    g_Discord.RegisterGlobalSlashCommandWithOptions("consolecommand", "Send an arbitrary command to the server as if it was typed in the console.", "0", option_names, option_descriptions, option_types, option_required, 1);
+    logger.DebugEx("%d", g_cvCommandEnableBits.IntValue);
+    if (IsCommandEnabled(COMMAND_CONSOLECOMMAND))
+    {
+        strcopy(option_names[0], sizeof(option_names[]), "command");
+        strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The command string to send.");
+        option_types[0]    = Option_String;
+        option_required[0] = true;
+        option_autocomplete[0] = false;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("consolecommand", "Send an arbitrary command to the server as if it was typed in the console.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 1);
+    }
+
+    if (IsCommandEnabled(COMMAND_PSAY))
+    {
+        strcopy(option_names[0], sizeof(option_names[]), "player");
+        strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The player to target.");
+        option_types[0]    = Option_String;
+        option_required[0] = true;
+        option_autocomplete[0] = true;
+
+        strcopy(option_names[1], sizeof(option_names[]), "message");
+        strcopy(option_descriptions[1], sizeof(option_descriptions[]), "The message to send to the target user.");
+        option_types[1]    = Option_String;
+        option_required[1] = true;
+        option_autocomplete[1] = false;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("psay", "Private message a player on the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
+    }
 
     logger.DebugEx("Getting output channel names...");
     for (int i = 0; i < g_ChannelListCount; i++)
@@ -651,15 +692,27 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     {
         interaction.CreateEphemeralResponse("Pong!");
     }
-    if (strcmp(commandName, "consolecommand") == 0)
+    if (IsCommandEnabled(COMMAND_CONSOLECOMMAND) && strcmp(commandName, "consolecommand") == 0)
     {
         char output[MAX_BUFFER_LENGTH];
         char input[MAX_BUFFER_LENGTH];
         interaction.GetOptionValue("command", input, sizeof(input));
+        
+        logger.InfoEx("Running server command: %s", input);
         ServerCommandEx(output, sizeof(output), input);
 
         Format(output, sizeof(output), "```\n%s```", output);
         interaction.CreateEphemeralResponse(output);
+    }
+    if (IsCommandEnabled(COMMAND_PSAY) && strcmp(commandName, "psay") == 0)
+    {
+        char player[MAX_NAME_LENGTH];
+        interaction.GetOptionValue("player", player, sizeof(player));
+        char message[MAX_MESSAGE_LENGTH];
+        interaction.GetOptionValue("message", message, sizeof(message));
+
+        ServerCommand("sm_psay \"%s\" %s", player, message);
+        interaction.CreateEphemeralResponse("Message sent to Player:");
     }
     if (strcmp(commandName, "status") == 0)
     {
@@ -720,6 +773,30 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         interaction.CreateEphemeralResponseEmbed("", embed);
         delete embed;
     }
+}
+
+public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteraction interaction, bool focused, DiscordCommandOptionType type, char[] optionName)
+{
+    if (focused && g_cvCommandEnableBits.IntValue > 0 && StrEqual(optionName, "player"))
+    {
+        char value[MAX_NAME_LENGTH];
+        interaction.GetOptionValue("player", value, sizeof(value));
+        logger.DebugEx("%s (%d): %s", optionName, type, value);
+        for(int i = 1; i <= MaxClients; i++)
+        {
+            if (IsValidClient(i))
+            {
+                char playerEntry[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+                int userId = GetClientUserId(i);
+                FormatEx(playerEntry, sizeof(playerEntry), "#%d %s %s", userId, GetClientNameEx(i), GetClientAuthId2(i));
+
+                char userIdStr[5];
+                FormatEx(userIdStr, sizeof(userIdStr), "#%d", userId);
+                interaction.AddAutocompleteChoice(playerEntry, Option_String, userIdStr);
+            }
+        }
+    }
+    interaction.CreateAutocompleteResponse(discord);
 }
 
 public void Discord_OnMessage(Discord discord, DiscordMessage message)
@@ -1000,6 +1077,16 @@ void UpdatePresence()
 bool BotRunning(Discord bot)
 {
     return bot != INVALID_HANDLE && bot.IsRunning();
+}
+
+Action DeleteCommandsCmd(int args)
+{
+    if (g_Discord != INVALID_HANDLE)
+    {
+        g_Discord.BulkDeleteGlobalCommands();
+    }
+
+    return Plugin_Continue;
 }
 
 public void OnPluginEnd()

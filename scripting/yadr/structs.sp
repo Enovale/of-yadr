@@ -1,6 +1,11 @@
 #include "utils.sp"
 #include <discord>
 
+#define COMMAND_CONSOLECOMMAND (1<<0)
+#define COMMAND_PSAY           (1<<1)
+#define COMMAND_BAN            (1<<2)
+#define COMMAND_KICK           (1<<3)
+
 enum struct ChannelInfo
 {
   char id[SNOWFLAKE_SIZE];
