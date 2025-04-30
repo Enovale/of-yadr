@@ -1,7 +1,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#include "utils.sp"
+#include "structs.sp"
 
 char g_ServerIpStr[MAX_IP_LENGTH];
 int  g_ServerPort;
