@@ -129,6 +129,7 @@ Handle      t_Timer;
 
 public void OnPluginStart()
 {
+    LoadTranslations("common.phrases");
     LoadTranslations(PLUGIN_TRANS_FILE);
 
     g_cvBotToken                = CreateConVar(PLUGIN_CONVAR_PREFIX... "bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
@@ -316,7 +317,7 @@ public void OnClientPostAdminCheck(int client)
 
     if (!g_ServerIdle && g_AllowConnectEvents && TranslationPhraseExists(TRANSLATION_PLAYER_CONNECT_EVENT))
     {
-        int  team = GetClientTeam(client);
+        int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_CONNECT_EVENT,
@@ -334,7 +335,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
         GetEventString(event, "reason", reason, sizeof(reason));
         ReplaceString(reason, sizeof(reason), "\n", " ");
 
-        int  team = GetClientTeam(client);
+        int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_DISCONNECT_EVENT,
@@ -350,7 +351,7 @@ void OnPlayerBanned(int client, int time, const char[] reason)
 {
     if (TranslationPhraseExists(TRANSLATION_PLAYER_BAN_EVENT))
     {
-        int  team = GetClientTeam(client);
+        int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_BAN_EVENT,
@@ -387,7 +388,7 @@ Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
         char newName[MAX_NAME_LENGTH];
         GetEventString(event, "newname", newName, sizeof(newName));
 
-        int  team = GetClientTeam(client);
+        int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
         SendToDiscordEx(TRANSLATION_PLAYER_NAME_CHANGE_EVENT,
@@ -417,7 +418,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
         }
     }
 
-    int  team = GetClientTeam(author);
+    int  team = GetClientTeamEx(author);
     char teamName[MAX_TEAM_NAME];
     teamName = GetTeamNameEx(team);
     char tempBuffer[MAX_DISCORD_MESSAGE_LENGTH];
@@ -620,7 +621,7 @@ void TeardownDiscordBot()
     delete g_Discord;
 }
 
-#define OPTIONS 2
+#define OPTIONS 3
 
 public void Discord_OnReady(Discord discord)
 {
@@ -648,8 +649,8 @@ public void Discord_OnReady(Discord discord)
     {
         strcopy(option_names[0], sizeof(option_names[]), "command");
         strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The command string to send.");
-        option_types[0]    = Option_String;
-        option_required[0] = true;
+        option_types[0]        = Option_String;
+        option_required[0]     = true;
         option_autocomplete[0] = false;
         g_Discord.RegisterGlobalSlashCommandWithOptions("consolecommand", "Send an arbitrary command to the server as if it was typed in the console.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 1);
     }
@@ -658,16 +659,54 @@ public void Discord_OnReady(Discord discord)
     {
         strcopy(option_names[0], sizeof(option_names[]), "player");
         strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The player to target.");
-        option_types[0]    = Option_String;
-        option_required[0] = true;
+        option_types[0]        = Option_String;
+        option_required[0]     = true;
         option_autocomplete[0] = true;
 
         strcopy(option_names[1], sizeof(option_names[]), "message");
         strcopy(option_descriptions[1], sizeof(option_descriptions[]), "The message to send to the target user.");
-        option_types[1]    = Option_String;
-        option_required[1] = true;
+        option_types[1]        = Option_String;
+        option_required[1]     = true;
         option_autocomplete[1] = false;
         g_Discord.RegisterGlobalSlashCommandWithOptions("psay", "Private message a player on the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
+    }
+
+    if (IsCommandEnabled(COMMAND_KICK))
+    {
+        strcopy(option_names[0], sizeof(option_names[]), "player");
+        strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The player to target.");
+        option_types[0]        = Option_String;
+        option_required[0]     = true;
+        option_autocomplete[0] = true;
+
+        strcopy(option_names[1], sizeof(option_names[]), "reason");
+        strcopy(option_descriptions[1], sizeof(option_descriptions[]), "The reason to kick the player.");
+        option_types[1]        = Option_String;
+        option_required[1]     = true;
+        option_autocomplete[1] = true;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("kick", "Kicks a player from the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
+    }
+
+    if (IsCommandEnabled(COMMAND_BAN))
+    {
+        strcopy(option_names[0], sizeof(option_names[]), "player");
+        strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The player to target.");
+        option_types[0]        = Option_String;
+        option_required[0]     = true;
+        option_autocomplete[0] = true;
+
+        strcopy(option_names[1], sizeof(option_names[]), "time");
+        strcopy(option_descriptions[1], sizeof(option_descriptions[]), "How long the ban should last in minutes. (0 means permanent)");
+        option_types[1]        = Option_Integer;
+        option_required[1]     = true;
+        option_autocomplete[1] = false;
+
+        strcopy(option_names[2], sizeof(option_names[]), "reason");
+        strcopy(option_descriptions[2], sizeof(option_descriptions[]), "The reason to kick the player.");
+        option_types[2]        = Option_String;
+        option_required[2]     = false;
+        option_autocomplete[2] = true;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("ban", "Bans a player from the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
     }
 
     logger.DebugEx("Getting output channel names...");
@@ -697,7 +736,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         char output[MAX_BUFFER_LENGTH];
         char input[MAX_BUFFER_LENGTH];
         interaction.GetOptionValue("command", input, sizeof(input));
-        
+
         logger.InfoEx("Running server command: %s", input);
         ServerCommandEx(output, sizeof(output), input);
 
@@ -708,11 +747,68 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     {
         char player[MAX_NAME_LENGTH];
         interaction.GetOptionValue("player", player, sizeof(player));
-        char message[MAX_MESSAGE_LENGTH];
-        interaction.GetOptionValue("message", message, sizeof(message));
+        char content[MAX_MESSAGE_LENGTH];
+        interaction.GetOptionValue("message", content, sizeof(content));
 
-        ServerCommand("sm_psay \"%s\" %s", player, message);
-        interaction.CreateEphemeralResponse("Message sent to Player:");
+        int  client = FindTarget(0, player, true, false);
+        int  team   = GetClientTeamEx(client);
+        char teamName[MAX_TEAM_NAME];
+        teamName         = GetTeamNameEx(team);
+
+        DiscordUser user = interaction.GetUser();
+        char        username[MAX_DISCORD_NAME_LENGTH];
+        char        displayName[MAX_DISCORD_NAME_LENGTH];
+        char        nickname[MAX_DISCORD_NAME_LENGTH];
+        char        authorId[SNOWFLAKE_SIZE];
+        int         authorDescriminator = user.GetDiscriminator();
+        char        channelId[SNOWFLAKE_SIZE];
+        user.GetUsername(username, sizeof(username));
+        user.GetGlobalName(displayName, sizeof(displayName));
+        interaction.GetUserNickname(nickname, sizeof(nickname));
+        interaction.GetChannelId(channelId, sizeof(channelId));
+        if (StrEqual(nickname, ""))
+        {
+            nickname = displayName;
+        }
+
+        if (!g_cvDiscordColorCodesEnable.BoolValue)
+        {
+            CRemoveTags(username, sizeof(username));
+            CRemoveTags(content, sizeof(content));
+            CRemoveTags(displayName, sizeof(displayName));
+            CRemoveTags(nickname, sizeof(nickname));
+        }
+
+        // TODO This iteration is silly the macro should just let you pass a channel name, and will not work if command is used outside of usual channels
+        int channelIndex;
+        for (int i = 0; i < g_ChannelListCount; i++)
+        {
+            if (StrEqual(g_ChannelList[i].id, channelId))
+            {
+                channelIndex = i;
+            }
+        }
+
+        CPrintToChat(client, "%t", TRANSLATION_PSAY_COMMAND_CONTENT,
+                     FormatPlayerBlock(client),
+                     FormatDiscordMessageBlock(channelIndex)
+                     // FormatServerBlock(GetPlayers(false))
+        );
+
+        interaction.CreateEphemeralResponse("Message sent to Player!");
+    }
+    if (IsCommandEnabled(COMMAND_KICK) && strcmp(commandName, "kick") == 0)
+    {
+        char player[MAX_NAME_LENGTH];
+        interaction.GetOptionValue("player", player, sizeof(player));
+        char reason[MAX_MESSAGE_LENGTH];
+        interaction.GetOptionValue("reason", reason, sizeof(reason));
+
+        int client = FindTarget(0, player, true, false);
+
+        KickClient(client, reason);
+
+        interaction.CreateEphemeralResponse("Player has been dropped.");
     }
     if (strcmp(commandName, "status") == 0)
     {
@@ -721,7 +817,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
             return;
         }
 
-        int  playerCount = GetPlayers(true);
+        int  playerCount = GetPlayers(false);
 
         // TODO This should not be hardcoded
         char playersString[(3 * 2 + 1) + 10];
@@ -747,19 +843,37 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
         {
             char playerLines[DISCORD_FIELD_LENGTH];
+            int  total;
             for (int i = 1; i <= MaxClients; i++)
             {
+#if defined DEBUG
+                if (IsClientInGame(i))
+#else
                 if (IsValidClient(i))
+#endif
                 {
-                    int  team = GetClientTeam(i);
+                    int  team = GetClientTeamEx(i);
                     char teamName[MAX_TEAM_NAME];
                     teamName = GetTeamNameEx(team);
-                    FormatEx(playerLines, sizeof(playerLines), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : playerLines, TRANSLATION_STATUS_COMMAND_LINE,
-                             FormatPlayerBlock(i),
-                             FormatServerBlock(playerCount));
+                    total    = FormatEx(playerLines, sizeof(playerLines), i == 0 ? "%s%t" : "%s\n%t", i == 0 ? "" : playerLines, TRANSLATION_STATUS_COMMAND_LINE,
+                                        FormatPlayerBlock(i),
+                                        FormatServerBlock(playerCount));
+
+                    // Get the average of the past player lines and if the next one will put us over the limit, end here
+                    // This uses vague heuristics and will have errors sometimes! Sorry!
+                    if (total + (total / i) > DISCORD_FIELD_LENGTH)
+                    {
+                        embed.AddField(playersString, playerLines, false);
+                        total       = 0;
+                        playerLines = "";
+                    }
                 }
             }
-            embed.AddField(playersString, playerLines, false);
+
+            if (!StrEqual(playerLines, "") && total < DISCORD_FIELD_LENGTH)
+            {
+                embed.AddField(playersString, playerLines, false);
+            }
         }
 
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
@@ -777,26 +891,30 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
 public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteraction interaction, bool focused, DiscordCommandOptionType type, char[] optionName)
 {
-    if (focused && g_cvCommandEnableBits.IntValue > 0 && StrEqual(optionName, "player"))
+    if (focused && g_cvCommandEnableBits.IntValue > 0)
     {
-        char value[MAX_NAME_LENGTH];
-        interaction.GetOptionValue("player", value, sizeof(value));
-        logger.DebugEx("%s (%d): %s", optionName, type, value);
-        for(int i = 1; i <= MaxClients; i++)
+        if (StrEqual(optionName, "player"))
         {
-            if (IsValidClient(i))
+            char value[MAX_NAME_LENGTH];
+            interaction.GetOptionValue("player", value, sizeof(value));
+            logger.DebugEx("%s (%d): %s", optionName, type, value);
+            for (int i = 1; i <= MaxClients; i++)
             {
-                char playerEntry[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
-                int userId = GetClientUserId(i);
-                FormatEx(playerEntry, sizeof(playerEntry), "#%d %s %s", userId, GetClientNameEx(i), GetClientAuthId2(i));
+                if (IsValidClient(i))
+                {
+                    char playerEntry[MAX_DISCORD_NITRO_MESSAGE_LENGTH];
+                    int  userId = GetClientUserId(i);
+                    FormatEx(playerEntry, sizeof(playerEntry), "#%d %s %s", userId, GetClientNameEx(i), GetClientAuthId2(i));
 
-                char userIdStr[5];
-                FormatEx(userIdStr, sizeof(userIdStr), "#%d", userId);
-                interaction.AddAutocompleteChoice(playerEntry, Option_String, userIdStr);
+                    char userIdStr[5];
+                    FormatEx(userIdStr, sizeof(userIdStr), "#%d", userId);
+                    interaction.AddAutocompleteChoice(playerEntry, Option_String, userIdStr);
+                }
             }
         }
+
+        interaction.CreateAutocompleteResponse(discord);
     }
-    interaction.CreateAutocompleteResponse(discord);
 }
 
 public void Discord_OnMessage(Discord discord, DiscordMessage message)
@@ -927,7 +1045,7 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
     }
 }
 
-public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, float count, any data)
+public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, int count, any data)
 {
     logger.Debug("Channel Webhooks:");
     for (int i = 0; i < count; i++)
@@ -959,6 +1077,11 @@ void OnCreateWebhook(Discord discord, DiscordWebhook wh, any data)
 
 bool WebhookIsMine(DiscordWebhook wh)
 {
+    if (wh == INVALID_HANDLE)
+    {
+        return false;
+    }
+
     DiscordUser user = wh.GetUser();
 
     char        webhookName[MAX_DISCORD_NAME_LENGTH];

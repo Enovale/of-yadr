@@ -1,7 +1,8 @@
 # TODO
 
+- Make all english strings translated
 - Translation documentation works at least, but it really sucks to read.
 - Plugin mysteriously segfaults spcomp for sourcemod 1.11 so compatibility is currently impossible.
-- Add bridging discord messages between other channels the bot is attached to.
 - Maybe make log4sp optional via a separate build with a custom define?
-- Add admin commands like psay, ban, kick (Will require additions to sm-ext-discord)
+- Would really like to add a generic command to send discord messages so that other plugins can integrate with the relay
+- An include with a few stocks would be even better (e.g. Call for Admin command that pings a moderator)

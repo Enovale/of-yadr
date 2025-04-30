@@ -105,6 +105,15 @@ char[] FormatShortTime(int time)
     return Time;
 }
 
+int GetClientTeamEx(int client)
+{
+    if (!IsClientInGame(client))
+    {
+        return 0;
+    }
+    return GetClientTeam(client);
+}
+
 // TODO This seems not adaptable to other games
 char[] GetClientTeamNameIfSpectator(char[] teamName)
 {
@@ -113,6 +122,10 @@ char[] GetClientTeamNameIfSpectator(char[] teamName)
 
 char[] GetClientConnectionTime(int client)
 {
+    if (IsFakeClient(client))
+    {
+        return FormatShortTime(0);
+    }
     return FormatShortTime(RoundToFloor(GetClientTime(client)));
 }
 

@@ -13,6 +13,7 @@
 #define TRANSLATION_STATUS_COMMAND_DESC      "Status Command Description"
 #define TRANSLATION_STATUS_COMMAND_LINE      "Status Command Player Line"
 #define TRANSLATION_STATUS_COMMAND_FOOTER    "Status Command Footer"
+#define TRANSLATION_PSAY_COMMAND_CONTENT     "Psay Command Content"
 #define TRANSLATION_WEBHOOK_EVENTS           "Webhook Events"
 #define TRANSLATION_PLAYER_CONNECT_EVENT     "Player Connect Event"
 #define TRANSLATION_PLAYER_DISCONNECT_EVENT  "Player Disconnect Event"

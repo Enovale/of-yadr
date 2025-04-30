@@ -10,7 +10,7 @@
  * If multiple blocks are in a row you will have to increase the index
  * of the variable you want by the size of the previous block.
  * 
- * All blocks are followed by a Server Info Block unless specified otherwise.
+ * All phrases have a Server Info Block at the end, unless specified otherwise.
  * -----------
  * Discord Message Info block:
  * {1:s}  Author Username
@@ -71,7 +71,7 @@
     {
         // Player Message Block
         "#format" "{1:s},{2:s},{3:d},{4:d},{5:d},{6:d},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:s},{15:d},{16:s},{17:s},{18:s},{19:s},{20:s},{21:d},{22:d},{23:d},{24:d},{25:s},{26:s}"
-        "en"      "[{2}](<https://findsteamid.com/steamid/{11}>): `{1}`"
+        "en"      "`{1}`"
     }
     "Webhook Name"
     {
@@ -142,6 +142,13 @@
         "#format" "{1:s},{2:s},{3:s},{4:s},{5:d},{6:d},{7:d},{8:d},{9:s},{10:s}"
         "en"      "Playing to {8} frags. Current Map: {1}"
     }
+    "Psay Command Content"
+    {
+        // Player Info Block, Discord Message Info Block, Does NOT end with Server Info Block due to technical limitations
+        "#format" "{1:032s},{2:d},{3:d},{4:02d},{5:d},{6:s},{7:s},{8:s},{9:s},{10:s},{11:s},{12:s},{13:s},{14:d},{15:s},{16:s},{17:s},{18:s},{19:s},{20:s},{21:s},{22:d},{23:s}"
+        "en"      "[{blue}DC{default}] {green}(Private message from {18} to You): {default}{19}"
+    }
+
     /**
      * EVENTS
      */
