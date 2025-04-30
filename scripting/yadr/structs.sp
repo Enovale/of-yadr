@@ -1,25 +1,40 @@
 #include "utils.sp"
 #include <discord>
 
-#define COMMAND_CONSOLECOMMAND (1<<0)
+#pragma newdecls required
+#pragma semicolon 1
+
+#define COMMAND_RCON           (1<<0)
 #define COMMAND_PSAY           (1<<1)
 #define COMMAND_BAN            (1<<2)
 #define COMMAND_KICK           (1<<3)
 
-enum struct ChannelInfo
+/**
+ * Helper methods for various methodmaps in sm-ext-discord because they do not allow inline formatting.
+ */
+methodmap DiscordInteractionEx < DiscordInteraction
 {
-  char id[SNOWFLAKE_SIZE];
-  char name[MAX_DISCORD_CHANNEL_NAME_LENGTH];
-  char lastAuthor[MAX_AUTHID_LENGTH];
-  DiscordWebhook webhook;
-
-  bool WebhookAvailable()
+  public void CreateResponseEx(const char[] format, any ...)
   {
-    return this.webhook != INVALID_HANDLE;
+    char buffer[MAX_BUFFER_LENGTH];
+    VFormat(buffer, sizeof(buffer), format, 2);
+    this.CreateResponse(buffer);
   }
 
-  bool IsEqual(const char[] channelId)
+  public void CreateEphemeralResponseEx(const char[] format, any ...)
   {
-    return StrEqual(this.id, channelId);
+    char buffer[MAX_BUFFER_LENGTH];
+    VFormat(buffer, sizeof(buffer), format, 3);
+    this.CreateEphemeralResponse(buffer);
+  }
+}
+
+methodmap DiscordAutocompleteInteractionEx < DiscordAutocompleteInteraction
+{
+  public void AddAutocompleteChoiceEx(const char[] name, char[] format, any ...)
+  {
+    char buffer[MAX_BUFFER_LENGTH];
+    VFormat(buffer, sizeof(buffer), format, 3);
+    this.AddAutocompleteChoice(name, Option_String, buffer);
   }
 }
