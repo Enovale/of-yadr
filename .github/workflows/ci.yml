@@ -57,6 +57,12 @@ jobs:
           repository: KeithGDR/chat-processor
           path: chat-processor
 
+      - name: Checkout sourcebans-pp
+        uses: actions/checkout@v4
+        with:
+          repository: sbpp/sourcebans-pp
+          path: sourcebans-pp
+
       - name: Download morecolors
         uses: suisei-cn/actions-download-file@818d6b7dc8fe73f2f924b6241f2b1134ca1377d9 # 1.6.0
         id: downloadfile
@@ -71,6 +77,7 @@ jobs:
           cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
           cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
           cp -R chat-processor/scripting/include/** plugin/scripting/include/
+          cp -R sourcebans-pp/game/addons/sourcemod/scripting/include/** plugin/scripting/include/
 
       - name: Compile My plugin
         uses: SheplyRam/compile-sourcemod-plugin@v1
