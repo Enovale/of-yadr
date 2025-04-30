@@ -1,3 +1,8 @@
+#if defined _utils_included_
+  #endinput
+#endif
+#define _utils_included_
+
 #include <SteamWorks>
 #include <ripext>
 #include <morecolors>

@@ -1,3 +1,8 @@
+#if defined _yadr_included_
+  #endinput
+#endif
+#define _yadr_included_
+
 #include <discord>
 
 // clang-format off
