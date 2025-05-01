@@ -308,6 +308,12 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
         GetEventString(event, "reason", reason, sizeof(reason));
         ReplaceString(reason, sizeof(reason), "\n", " ");
 
+        if (!IsClientInGame(client))
+        {
+            logger.DebugEx("Client disconnected without being in-game: %d", client);
+            return Plugin_Continue;
+        }
+
         int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName = GetTeamNameEx(team);
@@ -337,21 +343,33 @@ void OnPlayerBanned(int client, int time, const char[] reason)
 
 public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
 {
+    if (!IsValidClient(client))
+        return Plugin_Continue;
+
     OnPlayerBanned(client, time, reason);
     return Plugin_Continue;
 }
 
 public void SBPP_OnBanPlayer(int iAdmin, int iTarget, int iTime, const char[] sReason)
 {
+    if (!IsValidClient(iTarget))
+        return;
+
     OnPlayerBanned(iTarget, iTime, sReason);
 }
 
 public void SBPP_OnReportPlayer(int iReporter, int iTarget, const char[] sReason)
 {
-    if (!IsValidClient(iReporter))
+    if (!IsValidClient(iReporter) || !IsValidClient(iTarget) || !TranslationPhraseExists(TRANSLATION_PLAYER_REPORT_EVENT))
         return;
 
-    // TODO
+    int  team = GetClientTeamEx(iTarget);
+    char teamName[MAX_TEAM_NAME];
+    teamName = GetTeamNameEx(team);
+    SendToDiscordEx(TRANSLATION_PLAYER_REPORT_EVENT,
+                    sReason,
+                    FormatPlayerBlock(iTarget),
+                    FormatServerBlock(GetPlayers(false)));
 }
 
 // TODO Not used very often and it would be a giant pain to get all the player info from just an identity... We stub this for now
@@ -648,7 +666,13 @@ public void Discord_OnReady(Discord discord)
         option_types[1]        = Option_String;
         option_required[1]     = true;
         option_autocomplete[1] = false;
-        g_Discord.RegisterGlobalSlashCommandWithOptions("psay", "Private message a player on the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
+
+        strcopy(option_names[2], sizeof(option_names[]), "ephemeral");
+        strcopy(option_descriptions[2], sizeof(option_descriptions[]), "Whether or not to only show this message to you.");
+        option_types[2]        = Option_Boolean;
+        option_required[2]     = false;
+        option_autocomplete[2] = false;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("psay", "Private message a player on the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 3);
     }
 
     if (IsCommandEnabled(COMMAND_KICK))
@@ -725,8 +749,15 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         interactionEx.GetOptionValue("player", player, sizeof(player));
         interactionEx.GetOptionValue("message", content, sizeof(content));
 
-        int  client = FindTarget(0, player, true, false);
-        int  team   = GetClientTeamEx(client);
+        int client = FindTarget(0, player, true, false);
+
+        if (client < 0)
+        {
+            interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_ERROR, "Target was invalid, couldn't find player.");
+            return;
+        }
+
+        int  team = GetClientTeamEx(client);
         char teamName[MAX_TEAM_NAME];
         teamName         = GetTeamNameEx(team);
 
@@ -767,8 +798,14 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
                      // ,FormatServerBlock(GetPlayers(false))
         );
 
-        // TODO For moderation logs this should probably be a non-ephemeral message and be in the translation
-        interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_MESSAGE_SENT);
+        if (interactionEx.GetOptionValueBool("ephemeral"))
+        {
+            interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_MESSAGE_SENT);
+        }
+        else
+        {
+            interactionEx.CreateResponseEx("%t", TRANSLATION_COMMAND_MESSAGE_SENT);
+        }
     }
     if (IsCommandEnabled(COMMAND_KICK) && strcmp(commandName, "kick") == 0)
     {
@@ -777,6 +814,12 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         interaction.GetOptionValue("reason", reason, sizeof(reason));
 
         int client = FindTarget(0, player, true, false);
+
+        if (client < 0)
+        {
+            interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_ERROR, "Target was invalid, couldn't find player.");
+            return;
+        }
 
         KickClient(client, reason);
 
@@ -789,7 +832,13 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         int time = interaction.GetOptionValueInt("time");
         interaction.GetOptionValue("reason", reason, sizeof(reason));
 
-        int  client = FindTarget(0, player, true, false);
+        int client = FindTarget(0, player, true, false);
+
+        if (client < 0)
+        {
+            interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_ERROR, "Target was invalid, couldn't find player.");
+            return;
+        }
 
         bool success;
         if (LibraryExists("sourcebanspp"))
@@ -907,7 +956,7 @@ public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteracti
 
                     char userIdStr[5];
                     FormatEx(userIdStr, sizeof(userIdStr), "#%d", userId);
-                    interaction.AddAutocompleteChoice(playerEntry, Option_String, userIdStr);
+                    interaction.AddAutocompleteChoiceString(playerEntry, userIdStr);
                 }
             }
         }
@@ -1094,7 +1143,7 @@ bool WebhookIsMine(DiscordWebhook wh)
     return StrEqual(g_WebhookName, webhookName) && StrEqual(userId, g_BotId);
 }
 
-void SendToDiscordChannel(const ChannelInfo channel, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
+void SendToDiscordChannel(ChannelInfo channel, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
     if (!BotRunning(g_Discord))
     {

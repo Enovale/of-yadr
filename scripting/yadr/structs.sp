@@ -18,7 +18,7 @@ methodmap DiscordInteractionEx < DiscordInteraction
   public void CreateResponseEx(const char[] format, any ...)
   {
     char buffer[MAX_BUFFER_LENGTH];
-    VFormat(buffer, sizeof(buffer), format, 2);
+    VFormat(buffer, sizeof(buffer), format, 3);
     this.CreateResponse(buffer);
   }
 
@@ -36,7 +36,7 @@ methodmap DiscordAutocompleteInteractionEx < DiscordAutocompleteInteraction
   {
     char buffer[MAX_BUFFER_LENGTH];
     VFormat(buffer, sizeof(buffer), format, 3);
-    this.AddAutocompleteChoice(name, Option_String, buffer);
+    this.AddAutocompleteChoiceString(name, buffer);
   }
 }
 // clang-format on
