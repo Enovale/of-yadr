@@ -4,6 +4,7 @@ Proper readme WIP
 
 > [!WARNING]  
 > This project has only been tested with Open Fortress on Sourcemod 1.12.
+> A few features will NOT work on SM 1.11.
 > Absolutely no testing has been done with other configurations, though they should theoretically work.
 > I would love reports to be made in the Issues section if issues are found in other games/setups
 

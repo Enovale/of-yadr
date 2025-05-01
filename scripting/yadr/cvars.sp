@@ -1,27 +1,27 @@
-#define PLUGIN_SHORTNAME     "yadr"
-#define PLUGIN_TRANS_PHRASES_FILE    PLUGIN_SHORTNAME... ".phrases"
+#define PLUGIN_SHORTNAME          "yadr"
+#define PLUGIN_TRANS_PHRASES_FILE PLUGIN_SHORTNAME... ".phrases"
 #define PLUGIN_TRANS_INFO_FILE    PLUGIN_SHORTNAME... ".info.phrases"
-#define PLUGIN_CONVAR_PREFIX "sm_" ... PLUGIN_SHORTNAME... "_"
+#define PLUGIN_CONVAR_PREFIX      "sm_" ... PLUGIN_SHORTNAME... "_"
 
-ConVar      g_cvBotToken;
-ConVar      g_cvSteamApiKey;
-ConVar      g_cvChannelIds;
-ConVar      g_cvWebhookModeEnable;
-ConVar      g_cvWebhookName;
-ConVar      g_cvWebhookUrlOverrides;
-ConVar      g_cvDiscordSendEnable;
-ConVar      g_cvServerSendEnable;
-ConVar      g_cvDiscordColorCodesEnable;
-ConVar      g_cvPresenceUpdateInterval;
-ConVar      g_cvMapChangeGracePeriod;
-ConVar      g_cvCommandEnableBits;
+ConVar g_cvBotToken;
+ConVar g_cvSteamApiKey;
+ConVar g_cvChannelIds;
+ConVar g_cvWebhookModeEnable;
+ConVar g_cvWebhookName;
+ConVar g_cvWebhookUrlOverrides;
+ConVar g_cvDiscordSendEnable;
+ConVar g_cvServerSendEnable;
+ConVar g_cvDiscordColorCodesEnable;
+ConVar g_cvPresenceUpdateInterval;
+ConVar g_cvMapChangeGracePeriod;
+ConVar g_cvCommandEnableBits;
 
-ConVar      g_cvVerboseEnable;
+ConVar g_cvVerboseEnable;
 
 // Cached internal convars
-ConVar      g_cvFragLimit;
+ConVar g_cvFragLimit;
 
-void CreateCvars()
+void   CreateCvars()
 {
     g_cvBotToken                = CreateConVar(PLUGIN_CONVAR_PREFIX... "bot_token", "", "Token for the discord bot to connect to.", FCVAR_PROTECTED);
     g_cvSteamApiKey             = CreateConVar(PLUGIN_CONVAR_PREFIX... "steam_api_key", "", "Steam Web API key for fetching player avatars.", FCVAR_PROTECTED);

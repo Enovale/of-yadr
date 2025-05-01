@@ -348,8 +348,8 @@ public void SBPP_OnBanPlayer(int iAdmin, int iTarget, int iTime, const char[] sR
 
 public void SBPP_OnReportPlayer(int iReporter, int iTarget, const char[] sReason)
 {
-	if (!IsValidClient(iReporter))
-		return;
+    if (!IsValidClient(iReporter))
+        return;
 
     // TODO
 }
@@ -789,7 +789,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         int time = interaction.GetOptionValueInt("time");
         interaction.GetOptionValue("reason", reason, sizeof(reason));
 
-        int client = FindTarget(0, player, true, false);
+        int  client = FindTarget(0, player, true, false);
 
         bool success;
         if (LibraryExists("sourcebanspp"))
