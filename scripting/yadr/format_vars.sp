@@ -3,14 +3,15 @@
 
 #include "utils.sp"
 
-char g_ServerIpStr[MAX_IP_LENGTH];
-int  g_ServerPort;
-char g_ServerHostname[64];
-char g_CachedMapName[MAX_MAP_NAME];
-char g_CachedNextMapName[MAX_MAP_NAME];
-int  g_MaxPlayers;
+char      g_ServerIpStr[MAX_IP_LENGTH];
+int       g_ServerPort;
+char      g_ServerHostname[64];
+char      g_CachedMapName[MAX_MAP_NAME];
+char      g_CachedNextMapName[MAX_MAP_NAME];
+ArrayList g_CachedMapList;
+int       g_MaxPlayers;
 
-void CacheFormatVars()
+void      CacheFormatVars()
 {
     g_ServerIpStr = GetServerIP();
     g_ServerPort  = GetConVarInt(FindConVar("hostport"));
@@ -21,6 +22,11 @@ void CacheFormatVars()
     g_MaxPlayers = GetConVarInt(FindConVar("sv_visiblemaxplayers"));
     if (g_MaxPlayers < 1)
         g_MaxPlayers = GetMaxHumanPlayers();
+}
+
+void CacheMapList()
+{
+    g_CachedMapList = view_as<ArrayList>(ReadMapList(_, _, _, MAPLIST_FLAG_MAPSFOLDER));
 }
 
 void CacheMapName()

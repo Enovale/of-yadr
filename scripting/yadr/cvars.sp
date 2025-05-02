@@ -34,7 +34,7 @@ void   CreateCvars()
     g_cvDiscordColorCodesEnable = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
     g_cvPresenceUpdateInterval  = CreateConVar(PLUGIN_CONVAR_PREFIX... "presence_interval", "5.0", "How often to update the bot's status (in seconds).");
     g_cvMapChangeGracePeriod    = CreateConVar(PLUGIN_CONVAR_PREFIX... "map_change_grace", "20.0", "How much time (in seconds) before connect events will be fired after a map starts.");
-    g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "TODO");
+    g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "Bitmask that enable various admin-only commands. 1: RCON\n2: PSAY\n4: KICK\n8: BAN");
 
     g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
 }

@@ -155,6 +155,8 @@ public void OnConfigsExecuted()
 
     CacheFormatVars();
 
+    CacheMapList();
+
     InitializeBannedWords();
 
     OnMapOrPluginStart();
@@ -170,6 +172,8 @@ public void OnConfigsExecuted()
             }
         }
     }
+
+    logger.DebugEx("RCON: %d, PSAY: %d, BAN: %d, KICK: %d, CHANGELEVEL: %d", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
 }
 
 void InitializeBannedWords(bool force = false)
@@ -343,7 +347,7 @@ void OnPlayerBanned(int client, int time, const char[] reason)
 
 public Action OnBanClient(int client, int time, int flags, const char[] reason, const char[] kick_message, const char[] command, any source)
 {
-    if (!IsValidClient(client))
+    if (!IsValidClient(client) || LibraryExists("sourcebans++"))
         return Plugin_Continue;
 
     OnPlayerBanned(client, time, reason);
@@ -686,7 +690,7 @@ public void Discord_OnReady(Discord discord)
         strcopy(option_names[1], sizeof(option_names[]), "reason");
         strcopy(option_descriptions[1], sizeof(option_descriptions[]), "The reason to kick the player.");
         option_types[1]        = Option_String;
-        option_required[1]     = true;
+        option_required[1]     = false;
         option_autocomplete[1] = true;
         g_Discord.RegisterGlobalSlashCommandWithOptions("kick", "Kicks a player from the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 2);
     }
@@ -711,6 +715,16 @@ public void Discord_OnReady(Discord discord)
         option_required[2]     = false;
         option_autocomplete[2] = true;
         g_Discord.RegisterGlobalSlashCommandWithOptions("ban", "Bans a player from the server.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 3);
+    }
+
+    if (IsCommandEnabled(COMMAND_CHANGELEVEL))
+    {
+        strcopy(option_names[0], sizeof(option_names[]), "map");
+        strcopy(option_descriptions[0], sizeof(option_descriptions[]), "The map to switch to.");
+        option_types[0]        = Option_String;
+        option_required[0]     = true;
+        option_autocomplete[0] = true;
+        g_Discord.RegisterGlobalSlashCommandWithOptions("changelevel", "Loads a new map by the specified name instantly.", "0", option_names, option_descriptions, option_types, option_required, option_autocomplete, 1);
     }
 
     logger.DebugEx("Getting output channel names...");
@@ -841,7 +855,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         }
 
         bool success;
-        if (LibraryExists("sourcebanspp"))
+        if (LibraryExists("sourcebans++"))
         {
             SBPP_BanPlayer(0, client, time, reason);
             success = true;
@@ -853,6 +867,24 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
         interactionEx.CreateEphemeralResponseEx("%t", success ? TRANSLATION_COMMAND_PLAYER_BANNED : TRANSLATION_COMMAND_ERROR);
     }
+    if (IsCommandEnabled(COMMAND_CHANGELEVEL) && strcmp(commandName, "changelevel") == 0)
+    {
+        char map[MAX_MAP_NAME];
+        interactionEx.GetOptionValue("map", map, sizeof(map));
+
+        if (!StrEqual(map, ""))
+        {
+            char foundMap[PLATFORM_MAX_PATH];
+            if (FindMap(map, foundMap, sizeof(foundMap)) != FindMap_NotFound)
+            {
+                interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_SUCCESS);
+                ForceChangeLevel(foundMap, "Forced changelevel by discord command");
+                return;
+            }
+        }
+        
+        interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_ERROR, "Map name is invalid!");
+    }
     if (strcmp(commandName, "status") == 0)
     {
         if (!TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE) || !TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
@@ -862,9 +894,8 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
         int  playerCount = GetPlayers(false);
 
-        // TODO This should not be hardcoded
-        char playersString[(3 * 2 + 1) + 10];
-        FormatEx(playersString, sizeof(playersString), "Players (%d/%d)", playerCount, MaxClients);
+        char playersString[DISCORD_TITLE_LENGTH];
+        FormatEx(playersString, sizeof(playersString), "%t", TRANSLATION_COMMAND_STATUS_PLAYERS, playerCount, MaxClients);
 
         DiscordEmbed embed = new DiscordEmbed();
         if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE))
@@ -887,6 +918,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
         {
             char playerLines[DISCORD_FIELD_LENGTH];
             int  total;
+            bool addedField;
             for (int i = 1; i <= MaxClients; i++)
             {
 #if defined DEBUG
@@ -907,13 +939,14 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
                     if (total + (total / i) > DISCORD_FIELD_LENGTH)
                     {
                         embed.AddField(playersString, playerLines, false);
+                        addedField  = true;
                         total       = 0;
                         playerLines = "";
                     }
                 }
             }
 
-            if (!StrEqual(playerLines, "") && total < DISCORD_FIELD_LENGTH)
+            if (!addedField && total < DISCORD_FIELD_LENGTH)
             {
                 embed.AddField(playersString, playerLines, false);
             }
@@ -959,9 +992,27 @@ public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteracti
                     interaction.AddAutocompleteChoiceString(playerEntry, userIdStr);
                 }
             }
+            
+            interaction.CreateAutocompleteResponse(discord);
         }
+        if (StrEqual(optionName, "map"))
+        {
+            char value[PLATFORM_MAX_PATH];
+            interaction.GetOptionValue("map", value, sizeof(value));
+            bool empty = StrEqual(value, "");
+            for(int i = 0; i < g_CachedMapList.Length; i++)
+            {
+                char map[MAX_MAP_NAME];
+                g_CachedMapList.GetString(i, map, sizeof(map));
 
-        interaction.CreateAutocompleteResponse(discord);
+                if (empty || StrContains(map, value, false) >= 0)
+                {
+                    interaction.AddAutocompleteChoiceString(map, map);
+                }
+            }
+
+            interaction.CreateAutocompleteResponse(discord);
+        }
     }
 }
 
