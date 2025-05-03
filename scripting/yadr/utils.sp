@@ -17,12 +17,6 @@
 #define MAX_PORT_LENGTH       6
 #define SHORT_TIME_LENGTH     12
 
-// Limits found here: https://discordjs.guide/popular-topics/embeds.html#notes
-#define DISCORD_TITLE_LENGTH  257
-#define DISCORD_DESC_LENGTH   4097
-#define DISCORD_FIELD_LENGTH  1025
-#define DISCORD_FOOTER_LENGTH 2049
-
 // 256 Is arbitrary, but webhook URLs should definitely never be bigger than that
 #define MAX_AVATAR_URL_LENGTH 256
 

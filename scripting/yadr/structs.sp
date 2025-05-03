@@ -8,7 +8,12 @@
 #define COMMAND_PSAY        (1 << 1)
 #define COMMAND_KICK        (1 << 2)
 #define COMMAND_BAN         (1 << 3)
-#define COMMAND_CHANGELEVEL (1 << 4)
+#define COMMAND_REPORT      (1 << 4)
+#define COMMAND_CHANGELEVEL (1 << 5)
+
+#define EVENT_BRIDGE        (1 << 0)
+#define EVENT_BAN           (1 << 1)
+#define EVENT_REPORT        (1 << 2)
 
 /**
  * Helper methods for various methodmaps in sm-ext-discord because they do not allow inline formatting.

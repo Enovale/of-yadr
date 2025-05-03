@@ -8,9 +8,10 @@
 // clang-format off
 enum struct ChannelInfo
 {
-  char id[SNOWFLAKE_SIZE];
-  char name[MAX_DISCORD_CHANNEL_NAME_LENGTH];
-  char lastAuthor[MAX_AUTHID_LENGTH];
+  char           id[SNOWFLAKE_SIZE];
+  char           name[MAX_DISCORD_CHANNEL_NAME_LENGTH];
+  char           lastAuthor[MAX_AUTHID_LENGTH];
+  int            enabledEvents;
   DiscordWebhook webhook;
 
   bool WebhookAvailable()

@@ -14,6 +14,7 @@ ConVar g_cvServerSendEnable;
 ConVar g_cvDiscordColorCodesEnable;
 ConVar g_cvPresenceUpdateInterval;
 ConVar g_cvMapChangeGracePeriod;
+ConVar g_cvChannelEventEnableBits;
 ConVar g_cvCommandEnableBits;
 
 ConVar g_cvVerboseEnable;
@@ -34,7 +35,8 @@ void   CreateCvars()
     g_cvDiscordColorCodesEnable = CreateConVar(PLUGIN_CONVAR_PREFIX... "dc_color_codes_enable", "0", "Allows discord->server messages to contain color codes like {grey} or {green}.");
     g_cvPresenceUpdateInterval  = CreateConVar(PLUGIN_CONVAR_PREFIX... "presence_interval", "5.0", "How often to update the bot's status (in seconds).");
     g_cvMapChangeGracePeriod    = CreateConVar(PLUGIN_CONVAR_PREFIX... "map_change_grace", "20.0", "How much time (in seconds) before connect events will be fired after a map starts.");
-    g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "Bitmask that enable various admin-only commands. 1: RCON\n2: PSAY\n4: KICK\n8: BAN");
+    g_cvChannelEventEnableBits  = CreateConVar(PLUGIN_CONVAR_PREFIX... "channel_event_bits", "255", "Semicolon separated list of bitmasks to enable events in individual channels. 1: Bridge this channel to other channels linked by the bot\n2: BAN\n4: REPORT");
+    g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "Bitmask that enable various admin-only commands. 1: RCON\n2: PSAY\n4: KICK\n8: BAN\n16: REPORT\n32: CHANGELEVEL");
 
     g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
 }
