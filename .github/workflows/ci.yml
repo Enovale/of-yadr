@@ -39,12 +39,6 @@ jobs:
           repository: KyleSanderson/SteamWorks
           path: steamworks
 
-      - name: Checkout ripext
-        uses: actions/checkout@v4
-        with:
-          repository: ErikMinekus/sm-ripext
-          path: sm-ripext
-
       - name: Checkout log4sp
         uses: actions/checkout@v4
         with:
@@ -80,7 +74,6 @@ jobs:
         run: |
           cp -R sm-ext-discord/scripting/include/** plugin/scripting/include/
           cp -R steamworks/Pawn/includes/** plugin/scripting/include/
-          cp -R sm-ripext/pawn/scripting/include/** plugin/scripting/include/
           cp -R sm-ext-log4sp/sourcemod/scripting/include/** plugin/scripting/include/
           cp -R chat-processor/scripting/include/** plugin/scripting/include/
           cp -R sourcebans-pp/game/addons/sourcemod/scripting/include/** plugin/scripting/include/

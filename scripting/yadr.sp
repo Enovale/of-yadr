@@ -137,11 +137,6 @@ public void OnPluginStart()
         logger.Error("!!!! No translations are specified, bot won't do anything! Please copy and edit `translations/" ... PLUGIN_TRANS_INFO_FILE... ".txt`");
     }
 
-    if (g_HttpClient != null)
-        delete g_HttpClient;
-
-    g_HttpClient = new HTTPClient("https://api.steampowered.com");
-
     HookEvent("player_changename", OnPlayerChangeName);
     HookEvent("player_disconnect", OnPlayerDisconnect, EventHookMode_Pre);
 
@@ -183,7 +178,7 @@ public void OnConfigsExecuted()
         }
     }
 
-    logger.DebugEx("RCON: %d, PSAY: %d, BAN: %d, KICK: %d, CHANGELEVEL: %d", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
+    logger.DebugEx("RCON: %i, PSAY: %i, BAN: %i, KICK: %i, CHANGELEVEL: i", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
 }
 
 void InitializeBannedWords(bool force = false)
@@ -324,7 +319,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 
         if (!IsClientInGame(client))
         {
-            logger.DebugEx("Client disconnected without being in-game: %d", client);
+            logger.DebugEx("Client disconnected without being in-game: %i", client);
             return Plugin_Continue;
         }
 
@@ -668,7 +663,7 @@ public void Discord_OnReady(Discord discord)
         g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
     }
 
-    logger.DebugEx("Commands enabled: %d", g_cvCommandEnableBits.IntValue);
+    logger.DebugEx("Commands enabled: %i", g_cvCommandEnableBits.IntValue);
     if (IsCommandEnabled(COMMAND_RCON))
     {
         char  option_names[][]        = { "command" };
@@ -972,7 +967,7 @@ public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteracti
         {
             char value[MAX_NAME_LENGTH];
             interaction.GetOptionValue("player", value, sizeof(value));
-            logger.DebugEx("%s (%d): %s", optionName, type, value);
+            logger.DebugEx("%s (%i): %s", optionName, type, value);
             for (int i = 1; i <= MaxClients; i++)
             {
                 if (IsValidClient(i))
@@ -986,7 +981,7 @@ public void Discord_OnAutocomplete(Discord discord, DiscordAutocompleteInteracti
                              FormatPlayerBlock(i),
                              FormatServerBlock(GetPlayers(false)));
 
-                    interactionEx.AddAutocompleteChoiceEx(playerEntry, "#%d", userId);
+                    interactionEx.AddAutocompleteChoiceEx(playerEntry, "#%i", userId);
                 }
             }
 

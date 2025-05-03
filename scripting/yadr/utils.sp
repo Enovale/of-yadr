@@ -4,7 +4,6 @@
 #define _utils_included_
 
 #include <SteamWorks>
-#include <ripext>
 #include <morecolors>
 #include <log4sp>
 
@@ -23,7 +22,6 @@
 Logger     logger;
 
 char       g_SteamApiKey[33];
-HTTPClient g_HttpClient;
 char       g_SteamAvatars[MAXPLAYERS][100];
 
 stock void InitializeLogging(char[] name, LogLevel logLevel)
@@ -222,33 +220,42 @@ void GetProfilePic(int client)
         return;
     }
 
-    FormatEx(requestBuffer, sizeof requestBuffer, "ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%s&format=json", g_SteamApiKey, steamId);
-    g_HttpClient.Get(requestBuffer, GetProfilePicCallback, client);
+    FormatEx(requestBuffer, sizeof requestBuffer, "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%s&format=vdf", g_SteamApiKey, steamId);
+    Handle request = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, requestBuffer);
+    if(!request || !SteamWorks_SetHTTPRequestContextValue(request, client) || !SteamWorks_SetHTTPCallbacks(request, GetProfilePicCallback) || !SteamWorks_SendHTTPRequest(request))
+	{
+		delete request;
+	}
 }
 
-public void GetProfilePicCallback(HTTPResponse response, any client)
+void GetProfilePicCallback(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any client)
 {
-    if (response.Status != HTTPStatus_OK)
+    if (bFailure || !bRequestSuccessful || eStatusCode != k_EHTTPStatusCode200OK)
     {
         FormatEx(g_SteamAvatars[client], sizeof(g_SteamAvatars[]), "NULL");
-        logger.ErrorEx("Failed to reach SteamAPI. Status: %i", response.Status);
+        logger.ErrorEx("Failed to reach SteamAPI for client %i. Status: %i", client, eStatusCode);
         return;
     }
 
-    JSONObject objects   = view_as<JSONObject>(response.Data);
-    JSONObject Response  = view_as<JSONObject>(objects.Get("response"));
-    JSONArray  players   = view_as<JSONArray>(Response.Get("players"));
-    int        playerlen = players.Length;
-    logger.DebugEx("Client %i SteamAPI Response Length: %i", client, playerlen);
+	int iBodyLength;
+	SteamWorks_GetHTTPResponseBodySize(hRequest, iBodyLength);
 
-    JSONObject player;
-    for (int i = 0; i < playerlen; i++)
+	char[] sData = new char[iBodyLength+1];
+	SteamWorks_GetHTTPResponseBodyData(hRequest, sData, iBodyLength);
+
+	delete hRequest;
+
+    KeyValues kv = new KeyValues("SteamAPIResponse");
+    if (!kv.ImportFromString(sData, "SteamAPIResponse") || !kv.JumpToKey("players") || !kv.GotoFirstSubKey())
     {
-        player = view_as<JSONObject>(players.Get(i));
-        player.GetString("avatarfull", g_SteamAvatars[client], sizeof(g_SteamAvatars[]));
-        logger.DebugEx("Client %i has Avatar URL: %s", client, g_SteamAvatars[client]);
-        delete player;
+        logger.ErrorEx("Failed to parse avatar response for: %i", client);
+        delete kv;
+        return;
     }
+
+	kv.GetString("avatarfull", g_SteamAvatars[client], sizeof(g_SteamAvatars[]));
+    logger.DebugEx("Client %i has Avatar URL: %s", client, g_SteamAvatars[client]);
+	delete kv;
 }
 
 /**

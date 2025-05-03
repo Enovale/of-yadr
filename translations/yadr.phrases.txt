@@ -10,7 +10,7 @@
     }
     "Status Player Count"
     {
-        "en"      "Players (%d/%d)"
+        "en"      "Players (%i/%i)"
     }
     "Message Sent"
     {
