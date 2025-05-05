@@ -14,6 +14,11 @@ Proper readme WIP
 
 Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause sensitive info to be leaked accidentally.
 
+## Screenshots
+
+[Basic Usage Screenshot](https://github.com/user-attachments/assets/8f4ccd97-7417-4480-923b-4799161ed06c)
+[Status Command Screenshot](https://github.com/user-attachments/assets/ea573787-1426-43fb-86f7-3e29be0af75c)
+
 ## Requirements
 
 - Sourcemod 1.12+ is required.
