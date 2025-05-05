@@ -1,0 +1,26 @@
+name: Draft Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        description: 'Version tag for new release'
+        required: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    runs-on: ubuntu-latest
+    name: deploy
+    needs: [build]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: yadr-${{ github.event.inputs.tag }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Display structure of downloaded files
+        run: ls -R yadr-${{ github.event.inputs.tag }}

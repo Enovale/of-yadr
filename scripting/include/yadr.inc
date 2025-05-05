@@ -5,6 +5,10 @@
 
 #include <discord>
 
+#pragma newdecls required
+#pragma semicolon 1
+#pragma tabsize 2
+
 // clang-format off
 enum struct ChannelInfo
 {

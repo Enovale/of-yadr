@@ -3,6 +3,7 @@
 
 #pragma newdecls required
 #pragma semicolon 1
+#pragma tabsize 2
 
 #define COMMAND_RCON        (1 << 0)
 #define COMMAND_PSAY        (1 << 1)

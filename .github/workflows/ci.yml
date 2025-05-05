@@ -1,7 +1,8 @@
-name: Build Nightly Plugin
+name: Nightly Build
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     paths:
       - "scripting/**"
@@ -22,6 +23,10 @@ jobs:
           - "1.12"
 
     steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+        
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
@@ -94,5 +99,5 @@ jobs:
       - name: Upload build archive
         uses: actions/upload-artifact@v4
         with:
-          name: yadr-${{ matrix.sm_version }}
+          name: yadr-nightly-sm${{ matrix.sm_version }}-v${{ steps.date.outputs.date }}-${{ env.GITHUB_SHA_SHORT }}
           path: /tmp/package

@@ -1,5 +1,6 @@
 #pragma newdecls required
 #pragma semicolon 1
+#pragma tabsize 2
 
 #define TRANSLATION_DISCORD_SERVER_MESSAGE   "Discord->Server Message Content"
 #define TRANSLATION_SERVER_DISCORD_MESSAGE   "Server->Discord Message Content"

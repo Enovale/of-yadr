@@ -2,6 +2,7 @@
 
 #pragma newdecls required
 #pragma semicolon 1
+#pragma tabsize 2
 
 char      g_ServerIpStr[MAX_IP_LENGTH];
 char      g_ServerTagsStr[128];
@@ -14,38 +15,38 @@ int       g_MaxPlayers;
 
 public void CacheFormatVars()
 {
-    g_ServerIpStr = GetServerIP();
-    g_ServerPort  = GetConVarInt(FindConVar("hostport"));
-    GetConVarString(FindConVar("hostname"), g_ServerHostname, sizeof(g_ServerHostname));
-    SanitiseText(g_ServerHostname, sizeof(g_ServerHostname));
-    CacheMapName();
+  g_ServerIpStr = GetServerIP();
+  g_ServerPort  = GetConVarInt(FindConVar("hostport"));
+  GetConVarString(FindConVar("hostname"), g_ServerHostname, sizeof(g_ServerHostname));
+  SanitiseText(g_ServerHostname, sizeof(g_ServerHostname));
+  CacheMapName();
 
-    g_MaxPlayers = GetConVarInt(FindConVar("sv_visiblemaxplayers"));
-    if (g_MaxPlayers < 1)
-        g_MaxPlayers = GetMaxHumanPlayers();
+  g_MaxPlayers = GetConVarInt(FindConVar("sv_visiblemaxplayers"));
+  if (g_MaxPlayers < 1)
+    g_MaxPlayers = GetMaxHumanPlayers();
 }
 
 void CacheMapList()
 {
-    g_CachedMapList = view_as<ArrayList>(ReadMapList(_, _, _, MAPLIST_FLAG_MAPSFOLDER));
+  g_CachedMapList = view_as<ArrayList>(ReadMapList(_, _, _, MAPLIST_FLAG_MAPSFOLDER));
 }
 
 void CacheMapName()
 {
-    GetCurrentMap(g_CachedMapName, sizeof(g_CachedMapName));
-    SanitiseText(g_CachedMapName, sizeof(g_CachedMapName));
+  GetCurrentMap(g_CachedMapName, sizeof(g_CachedMapName));
+  SanitiseText(g_CachedMapName, sizeof(g_CachedMapName));
 }
 
 void CacheNextMapName()
 {
-    if (GetNextMap(g_CachedNextMapName, sizeof(g_CachedNextMapName)))
-    {
-        SanitiseText(g_CachedNextMapName, sizeof(g_CachedNextMapName));
-    }
+  if (GetNextMap(g_CachedNextMapName, sizeof(g_CachedNextMapName)))
+  {
+    SanitiseText(g_CachedNextMapName, sizeof(g_CachedNextMapName));
+  }
 }
 
 void CacheExplicitMapName(const char[] mapName)
 {
-    FormatEx(g_CachedMapName, sizeof(g_CachedMapName), "%s", mapName);
-    SanitiseText(g_CachedMapName, sizeof(g_CachedMapName));
+  FormatEx(g_CachedMapName, sizeof(g_CachedMapName), "%s", mapName);
+  SanitiseText(g_CachedMapName, sizeof(g_CachedMapName));
 }

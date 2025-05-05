@@ -1,3 +1,7 @@
+[![Nightly Build](https://github.com/Enovale/of-yadr/workflows/Nightly%20Build/badge.svg)](https://github.com/Enovale/of-yadr/actions?query=workflow:"Nightly+Build")
+[![GitHub release](https://img.shields.io/github/release/Enovale/of-yadr?include_prereleases=&sort=semver&color=blue)](https://github.com/Enovale/of-yadr/releases/)
+[![License](https://img.shields.io/badge/License-GPLv3-blue)](#license)
+
 # Yet Another Discord Relay for SourceMod
 
 Proper readme WIP
@@ -10,7 +14,7 @@ Proper readme WIP
 
 Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause sensitive info to be leaked accidentally.
 
-# Requirements
+## Requirements
 
 - Sourcemod 1.12+ is required.
 - [sm-ext-discord](https://github.com/Enovale/sm-ext-discord) (Using this specific fork is required)
@@ -21,15 +25,29 @@ Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause se
 - [SourceBans++](https://github.com/sbpp/sourcebans-pp) (Optional)
 - [Updater](https://forums.alliedmods.net/showthread.php?t=169095) (Optional)
 
-# Features
+## Quick Start
 
-- WIP
+Download the latest [release](https://github.com/Enovale/of-yadr/releases/) or a [dev build](https://github.com/Enovale/of-yadr/actions?query=workflow:"Nightly+Build"), and download and install the required extensions.
 
-# Planned Features
+Launch the server once to get everything to configure itself, then you can edit `<server>/cfg/sourcemod/yadr.cfg`.
+The cvars should be documented enough to get you started.
 
-- WIP
+If you want to change or translate the text the bot outputs, check out the two translation files in the install. They are also documented.
 
-# Building
+More detailed installation help with pictures can be found on the [wiki](https://github.com/Enovale/of-yadr/wiki).
+
+## Features
+
+- Relay messages from Discord to a Server, and vice versa.
+- Relay events like player connect/disconnect, map change, bans/reports to Discord
+- Run rcon commands, ban/kick players, psay to players, remotely with slash commands.
+- Makes sure player names and SteamIDs are searchable in the discord history, without clogging up the conversation
+
+## Building
 
 I highly recommend [Sourcepawn Studio](https://github.com/Sarrus1/sourcepawn-studio).
 With a proper setup it can create a seamless workflow and means I don't have to push hacky scripts to my repository.
+
+## License
+
+Released under [GPLv3](/LICENSE) by [@Enovale](https://github.com/Enovale).
