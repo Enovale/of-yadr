@@ -7,6 +7,11 @@ on:
         type: string
         description: 'Version tag for new release'
         required: true
+      prerelease:
+        type: boolean
+        description: 'Release is prerelease'
+        default: false
+        required: true
 
 jobs:
   build:
@@ -15,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     name: deploy
     needs: [build]
+    permissions:
+      contents: write
     steps:
       - name: Download artifacts
         uses: dawidd6/action-download-artifact@v9
@@ -24,34 +31,19 @@ jobs:
           path: yadr-${{ github.event.inputs.tag }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Display structure of downloaded files
-        run: ls -R yadr-${{ github.event.inputs.tag }}
+      - name: Rename artifacts
+        run: |
+          ls -R yadr-${{ github.event.inputs.tag }}
+          mv *1.11* yadr-sm1.11-v${{ github.event.inputs.tag }}.zip
+          mv *1.12* yadr-sm1.12-v${{ github.event.inputs.tag }}.zip
 
       - name: Create Draft Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          release_name: ${{ github.event.inputs.tag }}
+          tag: v${{ github.event.inputs.tag }}
           draft: true
-          prerelease: false
-
-      - uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: yadr-${{ github.event.inputs.tag }}/yadr-sm1.11-*
-          asset_name: yadr-sm1.11-yadr-${{ github.event.inputs.tag }}.zip
-          asset_content_type: application/zip
-
-      - uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: yadr-${{ github.event.inputs.tag }}/yadr-sm1.12-*
-          asset_name: yadr-sm1.12-yadr-${{ github.event.inputs.tag }}.zip
-          asset_content_type: application/zip
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          artifactErrorsFailBuild: true
+          artifactsContentType: application/zip
+          artifacts: "yadr-${{ github.event.inputs.tag }}/*.zip"
+          body: "PLEASE FILL IN WITH CHANGELOG!"
