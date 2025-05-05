@@ -33,7 +33,8 @@ jobs:
 
       - name: Rename artifacts
         run: |
-          ls -R yadr-${{ github.event.inputs.tag }}
+          cd yadr-${{ github.event.inputs.tag }}
+          ls -R
           mv *1.11* yadr-sm1.11-v${{ github.event.inputs.tag }}.zip
           mv *1.12* yadr-sm1.12-v${{ github.event.inputs.tag }}.zip
 
