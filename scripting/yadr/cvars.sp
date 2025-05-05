@@ -1,3 +1,6 @@
+#pragma newdecls required
+#pragma semicolon 1
+
 #define PLUGIN_SHORTNAME          "yadr"
 #define PLUGIN_TRANS_PHRASES_FILE PLUGIN_SHORTNAME... ".phrases"
 #define PLUGIN_TRANS_INFO_FILE    PLUGIN_SHORTNAME... ".info.phrases"
@@ -21,6 +24,7 @@ ConVar g_cvVerboseEnable;
 
 // Cached internal convars
 ConVar g_cvFragLimit;
+ConVar g_cvServerTags;
 
 void   CreateCvars()
 {
@@ -39,4 +43,14 @@ void   CreateCvars()
     g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "Bitmask that enable various admin-only commands. 1: RCON\n2: PSAY\n4: KICK\n8: BAN\n16: REPORT\n32: CHANGELEVEL");
 
     g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
+
+    g_cvFragLimit               = FindConVar("mp_fraglimit");
+    g_cvServerTags              = FindConVar("sv_tags");
+}
+
+void AddCvarHooks()
+{
+    g_cvChannelIds.AddChangeHook(OnCvarChange);
+    g_cvSteamApiKey.AddChangeHook(OnCvarChange);
+    g_cvServerTags.AddChangeHook(OnCvarChange);
 }

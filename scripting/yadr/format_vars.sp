@@ -1,9 +1,10 @@
+#include "utils.sp"
+
 #pragma newdecls required
 #pragma semicolon 1
 
-#include "utils.sp"
-
 char      g_ServerIpStr[MAX_IP_LENGTH];
+char      g_ServerTagsStr[128];
 int       g_ServerPort;
 char      g_ServerHostname[64];
 char      g_CachedMapName[MAX_MAP_NAME];
@@ -11,7 +12,7 @@ char      g_CachedNextMapName[MAX_MAP_NAME];
 ArrayList g_CachedMapList;
 int       g_MaxPlayers;
 
-void      CacheFormatVars()
+public void CacheFormatVars()
 {
     g_ServerIpStr = GetServerIP();
     g_ServerPort  = GetConVarInt(FindConVar("hostport"));

@@ -32,6 +32,7 @@
                                       %0,                     \
                                       g_MaxPlayers,           \
                                       g_cvFragLimit.IntValue, \
+                                      g_ServerTagsStr,        \
                                       g_BotName,              \
                                       g_BotId
 
@@ -124,8 +125,6 @@ public void OnPluginStart()
     // RegAdminCmd(PLUGIN_CONVAR_PREFIX... "send", SendMessageCmd, Admin_RCON, "Sends a message to a discord channel using the internal channel and webhook list.");
     // RegAdminCmd(PLUGIN_CONVAR_PREFIX... "send_all", SendMessageAllCmd, Admin_RCON, "Sends a message to all the registered discord channels.");
 
-    g_cvFragLimit = FindConVar("mp_fraglimit");
-
     // TODO This seems bad but also I don't know why translations don't reload anyway
     ServerCommand("sm_reload_translations");
 
@@ -146,8 +145,7 @@ public void OnPluginStart()
 public void OnConfigsExecuted()
 {
     g_cvBotToken.AddChangeHook(OnBotTokenChange);
-    g_cvChannelIds.AddChangeHook(OnCvarChange);
-    g_cvSteamApiKey.AddChangeHook(OnCvarChange);
+    AddCvarHooks();
     FindConVar("sm_nextmap").AddChangeHook(OnNextMapChanged);
 
     if (LibraryExists("updater"))
@@ -601,8 +599,8 @@ void UpdateCvars()
     }
 
     GetConVarString(g_cvSteamApiKey, g_SteamApiKey, sizeof(g_SteamApiKey));
-
     GetConVarString(g_cvWebhookName, g_WebhookName, sizeof(g_WebhookName));
+    GetConVarString(g_cvServerTags, g_ServerTagsStr, sizeof(g_ServerTagsStr));
 }
 
 void SetupDiscordBot()
@@ -734,11 +732,10 @@ public void Discord_OnReady(Discord discord)
 
 public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interaction)
 {
+    char commandName[MAX_COMMAND_NAME];
+    interaction.GetCommandName(commandName, sizeof(commandName));
+
     DiscordInteractionEx interactionEx = view_as<DiscordInteractionEx>(interaction);
-
-    char                 commandName[32];
-    interactionEx.GetCommandName(commandName, sizeof(commandName));
-
     if (IsCommandEnabled(COMMAND_RCON) && strcmp(commandName, "rcon") == 0)
     {
         char output[MAX_BUFFER_LENGTH], input[MAX_BUFFER_LENGTH];

@@ -222,10 +222,10 @@ void GetProfilePic(int client)
 
     FormatEx(requestBuffer, sizeof requestBuffer, "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=%s&steamids=%s&format=vdf", g_SteamApiKey, steamId);
     Handle request = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, requestBuffer);
-    if(!request || !SteamWorks_SetHTTPRequestContextValue(request, client) || !SteamWorks_SetHTTPCallbacks(request, GetProfilePicCallback) || !SteamWorks_SendHTTPRequest(request))
-	{
-		delete request;
-	}
+    if (!request || !SteamWorks_SetHTTPRequestContextValue(request, client) || !SteamWorks_SetHTTPCallbacks(request, GetProfilePicCallback) || !SteamWorks_SendHTTPRequest(request))
+    {
+        delete request;
+    }
 }
 
 void GetProfilePicCallback(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any client)
@@ -237,13 +237,13 @@ void GetProfilePicCallback(Handle hRequest, bool bFailure, bool bRequestSuccessf
         return;
     }
 
-	int iBodyLength;
-	SteamWorks_GetHTTPResponseBodySize(hRequest, iBodyLength);
+    int iBodyLength;
+    SteamWorks_GetHTTPResponseBodySize(hRequest, iBodyLength);
 
-	char[] sData = new char[iBodyLength+1];
-	SteamWorks_GetHTTPResponseBodyData(hRequest, sData, iBodyLength);
+    char[] sData = new char[iBodyLength + 1];
+    SteamWorks_GetHTTPResponseBodyData(hRequest, sData, iBodyLength);
 
-	delete hRequest;
+    delete hRequest;
 
     KeyValues kv = new KeyValues("SteamAPIResponse");
     if (!kv.ImportFromString(sData, "SteamAPIResponse") || !kv.JumpToKey("players") || !kv.GotoFirstSubKey())
@@ -253,9 +253,9 @@ void GetProfilePicCallback(Handle hRequest, bool bFailure, bool bRequestSuccessf
         return;
     }
 
-	kv.GetString("avatarfull", g_SteamAvatars[client], sizeof(g_SteamAvatars[]));
+    kv.GetString("avatarfull", g_SteamAvatars[client], sizeof(g_SteamAvatars[]));
     logger.DebugEx("Client %i has Avatar URL: %s", client, g_SteamAvatars[client]);
-	delete kv;
+    delete kv;
 }
 
 /**
