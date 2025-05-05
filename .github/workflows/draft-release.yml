@@ -17,10 +17,10 @@ jobs:
     needs: [build]
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v9
         with:
+          workflow: ci.yml
           path: yadr-${{ github.event.inputs.tag }}
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Display structure of downloaded files
         run: ls -R yadr-${{ github.event.inputs.tag }}
