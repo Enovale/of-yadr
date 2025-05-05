@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Get current date
         id: date
-        run: echo "{name}={$(date +'%Y%m%d')}" >> $GITHUB_OUTPUT
+        run: echo "{name}={$(date +'%Y%m%d%H%M')}" >> $GITHUB_OUTPUT
         
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -99,5 +99,5 @@ jobs:
       - name: Upload build archive
         uses: actions/upload-artifact@v4
         with:
-          name: yadr-nightly-sm${{ matrix.sm_version }}-v${{ steps.date.outputs.date }}-${{ env.GITHUB_SHA_SHORT }}
+          name: yadr-nightly-sm${{ matrix.sm_version }}-v${{ steps.date.outputs.date }}
           path: /tmp/package
