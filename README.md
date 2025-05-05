@@ -17,7 +17,7 @@ Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause se
 ## Requirements
 
 - Sourcemod 1.12+ is required.
-- [sm-ext-discord](https://github.com/Enovale/sm-ext-discord) (Using this specific fork is required)
+- [sm-ext-discord](https://github.com/ProjectSky/sm-ext-discord) (You can download the latest version [here](https://github.com/ProjectSky/sm-ext-discord/actions/workflows/ci.yml)).
 - [SteamWorks](https://forums.alliedmods.net/showthread.php?t=229556)
 - [log4sp](https://github.com/F1F88/sm-ext-log4sp)
 - [Chat Processor](https://github.com/KeithGDR/chat-processor)

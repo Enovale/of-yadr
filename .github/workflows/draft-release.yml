@@ -45,6 +45,6 @@ jobs:
           draft: true
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
           artifactErrorsFailBuild: true
-          artifactsContentType: application/zip
+          artifactContentType: application/zip
           artifacts: "yadr-${{ github.event.inputs.tag }}/*.zip"
           body: "PLEASE FILL IN WITH CHANGELOG!"
