@@ -37,12 +37,28 @@ stock void InitializeLogging(char[] name, LogLevel logLevel)
 
   logger = ServerConsoleSink.CreateLogger(name);
   logger.AddSinkEx(new DailyFileSink(dailyFileFormat));
-  logger.SetLevel(logLevel);
+  if (logger.GetLevel() < logLevel)
+  {
+    logger.SetLevel(logLevel);
+  }
 }
 
 void DestroyLogging()
 {
   delete logger;
+}
+
+bool TranslationExistsAndNotEmpty(const char[] translationPhrase)
+{
+  if (!TranslationPhraseExists(translationPhrase))
+  {
+    return false;
+  }
+
+  char buffer[MAX_BUFFER_LENGTH];
+  int count = FormatEx(buffer, sizeof(buffer), "%t", translationPhrase, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+
+  return count > 0;
 }
 
 char[] GetServerIP()

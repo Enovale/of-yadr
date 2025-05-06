@@ -1,3 +1,7 @@
+/**
+ * Please check out the comment in the yadr.info.phrases.txt file for context, some of the information is applicable here as well.
+ */
+
 "Phrases"
 {
     "Command Error"
@@ -23,5 +27,13 @@
     "Player Banned"
     {
         "en"      "Player successfully banned."
+    }
+    "Commands Deleted"
+    {
+        "en"      "Deleted slash commands!"
+    }
+    "Commands Failed To Delete"
+    {
+        "en"      "Could not delete slash commands: %s"
     }
 }

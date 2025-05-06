@@ -36,3 +36,5 @@
 #define TRANSLATION_COMMAND_MESSAGE_SENT     "Message Sent"
 #define TRANSLATION_COMMAND_PLAYER_KICKED    "Player Kicked"
 #define TRANSLATION_COMMAND_PLAYER_BANNED    "Player Banned"
+#define TRANSLATION_COMMAND_CMD_DELETE       "Commands Deleted"
+#define TRANSLATION_COMMAND_CMD_DELETE_FAIL  "Commands Failed To Delete"

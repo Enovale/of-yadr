@@ -17,7 +17,8 @@ Until 1.0.0, the Translation format will break FREQUENTLY, and this can cause se
 ## Screenshots
 
 ![Basic Usage Screenshot](https://github.com/user-attachments/assets/8f4ccd97-7417-4480-923b-4799161ed06c)  
-![Status Command Screenshot](https://github.com/user-attachments/assets/ea573787-1426-43fb-86f7-3e29be0af75c)
+![Status Command Screenshot](https://github.com/user-attachments/assets/ea573787-1426-43fb-86f7-3e29be0af75c)  
+![Presence Screenshot](https://github.com/user-attachments/assets/0db88f9e-b76d-4cc8-aee5-67541b7a6155)
 
 ## Requirements
 

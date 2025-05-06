@@ -1,9 +1,16 @@
 /**
+ * ****************
+ * 
+ * This file will get overriden if you update YaDR. I recommend you copy these two translation files to `cfg/translations/en/`,
+ * and change those files instead. That way your personal preferences will override the original when applicable.
+ * 
+ * ****************
+ * 
  * Any phrases used on the server side can use color codes listed here: https://forums.alliedmods.net/showthread.php?t=185016
  * Note that any format variable can only be used once in a phrase.
  * 
- * Simply remove the phrase corrosponding to events you don't want to be emitted.
- * E.G. If you don't want player connection events to be displayed, simply remove the entire phrase for that event.
+ * Simply set the phrase corresponding to events that you don't want to be emitted to "".
+ * E.G. If you don't want player connection events to be displayed, set the phrase to "en": ""
  * -----------
  * There are 4 types of format params that are used across these phrases.
  * 

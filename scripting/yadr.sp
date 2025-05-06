@@ -132,7 +132,7 @@ public void OnPluginStart()
   AutoExecConfig(true, PLUGIN_SHORTNAME);
   InitializeLogging(PLUGIN_SHORTNAME, g_cvVerboseEnable.BoolValue ? LogLevel_Debug : LogLevel_Info);
 
-  if (!TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE) && !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE) && !TranslationPhraseExists(TRANSLATION_WEBHOOK_MESSAGE) && !TranslationPhraseExists(TRANSLATION_STATUS) && !TranslationPhraseExists(TRANSLATION_STATUS_PLURAL))
+  if (!TranslationExistsAndNotEmpty(TRANSLATION_DISCORD_SERVER_MESSAGE) && !TranslationExistsAndNotEmpty(TRANSLATION_SERVER_DISCORD_MESSAGE) && !TranslationExistsAndNotEmpty(TRANSLATION_WEBHOOK_MESSAGE) && !TranslationExistsAndNotEmpty(TRANSLATION_STATUS) && !TranslationExistsAndNotEmpty(TRANSLATION_STATUS_PLURAL))
   {
     logger.Error("!!!! No translations are specified, bot won't do anything! Please copy and edit `translations/" ... PLUGIN_TRANS_INFO_FILE... ".txt`");
   }
@@ -251,7 +251,7 @@ void OnMapOrPluginStart()
     SetupDiscordBot();
   }
 
-  if (g_BotReady && TranslationPhraseExists(TRANSLATION_MAP_CHANGE_EVENT))
+  if (g_BotReady && TranslationExistsAndNotEmpty(TRANSLATION_MAP_CHANGE_EVENT))
   {
     SendEventToDiscord(TRANSLATION_MAP_CHANGE_EVENT, FormatServerBlock(GetPlayers(false)));
   }
@@ -296,7 +296,7 @@ public void OnClientPostAdminCheck(int client)
 {
   GetProfilePic(client);
 
-  if (!g_ServerIdle && g_AllowConnectEvents && TranslationPhraseExists(TRANSLATION_PLAYER_CONNECT_EVENT))
+  if (!g_ServerIdle && g_AllowConnectEvents && TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_CONNECT_EVENT))
   {
     int  team = GetClientTeamEx(client);
     char teamName[MAX_TEAM_NAME];
@@ -309,7 +309,7 @@ public void OnClientPostAdminCheck(int client)
 
 Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 {
-  if (!g_ServerIdle && g_AllowConnectEvents && TranslationPhraseExists(TRANSLATION_PLAYER_DISCONNECT_EVENT))
+  if (!g_ServerIdle && g_AllowConnectEvents && TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_DISCONNECT_EVENT))
   {
     int  client = GetClientOfUserId(GetEventInt(event, "userid"));
     char reason[MAX_MESSAGE_LENGTH];
@@ -336,7 +336,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
 
 void OnPlayerBanned(int client, int time, const char[] reason)
 {
-  if (TranslationPhraseExists(TRANSLATION_PLAYER_BAN_EVENT))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_BAN_EVENT))
   {
     int  team = GetClientTeamEx(client);
     char teamName[MAX_TEAM_NAME];
@@ -368,7 +368,7 @@ public void SBPP_OnBanPlayer(int iAdmin, int iTarget, int iTime, const char[] sR
 
 public void SBPP_OnReportPlayer(int iReporter, int iTarget, const char[] sReason)
 {
-  if (!IsValidClient(iReporter) || !IsValidClient(iTarget) || !TranslationPhraseExists(TRANSLATION_PLAYER_REPORT_EVENT))
+  if (!IsValidClient(iReporter) || !IsValidClient(iTarget) || !TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_REPORT_EVENT))
     return;
 
   int  team = GetClientTeamEx(iTarget);
@@ -389,7 +389,7 @@ public Action OnBanIdentity(const char[] identity, int time, int flags, const ch
 
 Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
 {
-  if (TranslationPhraseExists(TRANSLATION_PLAYER_NAME_CHANGE_EVENT))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_NAME_CHANGE_EVENT))
   {
     int  client = GetClientOfUserId(GetEventInt(event, "userid"));
     char newName[MAX_NAME_LENGTH];
@@ -409,7 +409,7 @@ Action OnPlayerChangeName(Event event, const char[] name, bool dontBroadcast)
 
 public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstring, char[] name, char[] message, bool& processcolors, bool& removecolors)
 {
-  if (!g_cvServerSendEnable.BoolValue || !BotRunning(g_Discord) || !TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
+  if (!g_cvServerSendEnable.BoolValue || !BotRunning(g_Discord) || !TranslationExistsAndNotEmpty(TRANSLATION_SERVER_DISCORD_MESSAGE))
   {
     return Plugin_Continue;
   }
@@ -468,21 +468,21 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
   char playerInfoEventContent[MAX_DISCORD_MESSAGE_LENGTH];
 
   int  frags = GetClientFrags(author);
-  if (TranslationPhraseExists(TRANSLATION_SERVER_DISCORD_MESSAGE))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_SERVER_DISCORD_MESSAGE))
   {
     FormatEx(botContent, sizeof(botContent), "%t", TRANSLATION_SERVER_DISCORD_MESSAGE,
              FormatPlayerMessageBlock(author),
              FormatServerBlock(playerCount));
   }
 
-  if (TranslationPhraseExists(TRANSLATION_WEBHOOK_MESSAGE))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_WEBHOOK_MESSAGE))
   {
     FormatEx(webhookContent, sizeof(webhookContent), "%t", TRANSLATION_WEBHOOK_MESSAGE,
              FormatPlayerMessageBlock(author),
              FormatServerBlock(playerCount));
   }
 
-  if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_INFO_EVENT))
   {
     FormatEx(playerInfoEventContent, sizeof(playerInfoEventContent), "%t", TRANSLATION_PLAYER_INFO_EVENT,
              FormatPlayerMessageBlock(author),
@@ -510,7 +510,7 @@ public Action CP_OnChatMessage(int& author, ArrayList recipients, char[] flagstr
       return Plugin_Continue;
     }
 
-    if (TranslationPhraseExists(TRANSLATION_PLAYER_INFO_EVENT) && !StrEqual(g_ChannelList[i].lastAuthor, authIdEngine))
+    if (TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_INFO_EVENT) && !StrEqual(g_ChannelList[i].lastAuthor, authIdEngine))
     {
       if (strlen(finalContent) + strlen(playerInfoEventContent) < MAX_DISCORD_MESSAGE_LENGTH)
       {
@@ -636,7 +636,7 @@ void TeardownDiscordBot()
   if (g_Discord != INVALID_HANDLE)
   {
     logger.Info("Tearing down bot...");
-    if (!g_ServerIdle && TranslationPhraseExists(TRANSLATION_BOT_STOP_EVENT))
+    if (!g_ServerIdle && TranslationExistsAndNotEmpty(TRANSLATION_BOT_STOP_EVENT))
     {
       SendEventToDiscord(TRANSLATION_BOT_STOP_EVENT, FormatServerBlock(GetPlayers(false)));
     }
@@ -657,7 +657,7 @@ public void Discord_OnReady(Discord discord)
 
   logger.InfoEx("Bot %s (ID: %s) is ready!", g_BotName, g_BotId);
 
-  if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE) && TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+  if (TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_LINE) && TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_FOOTER))
   {
     g_Discord.RegisterGlobalSlashCommand("status", "Fetch various information about the server.");
   }
@@ -742,7 +742,12 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     char output[MAX_BUFFER_LENGTH], input[MAX_BUFFER_LENGTH];
     interactionEx.GetOptionValue("command", input, sizeof(input));
 
-    logger.InfoEx("Running server command: %s", input);
+    DiscordUser user = interactionEx.GetUser();
+    char        username[MAX_DISCORD_NAME_LENGTH], userId[SNOWFLAKE_SIZE];
+    user.GetUsername(username, sizeof(username));
+    user.GetId(userId, sizeof(userId));
+
+    logger.WarnEx("RCON Command from %s (%s): %s", username, userId, input);
     ServerCommandEx(output, sizeof(output), input);
 
     interactionEx.CreateEphemeralResponseEx("```\n%s```", output);
@@ -877,7 +882,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
   }
   if (strcmp(commandName, "status") == 0)
   {
-    if (!TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE) || !TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
+    if (!TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_TITLE) || !TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_LINE))
     {
       return;
     }
@@ -888,7 +893,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
     FormatEx(playersString, sizeof(playersString), "%t", TRANSLATION_COMMAND_STATUS_PLAYERS, playerCount, MaxClients);
 
     DiscordEmbed embed = new DiscordEmbed();
-    if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_TITLE))
+    if (TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_TITLE))
     {
       char title[DISCORD_FIELD_LENGTH];
       FormatEx(title, sizeof(title), "%t", TRANSLATION_STATUS_COMMAND_TITLE, FormatServerBlock(GetPlayers(false)));
@@ -896,7 +901,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
       embed.SetTitle(title);
     }
 
-    if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_DESC))
+    if (TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_DESC))
     {
       char description[DISCORD_FIELD_LENGTH];
       FormatEx(description, sizeof(description), "%t", TRANSLATION_STATUS_COMMAND_DESC, FormatServerBlock(GetPlayers(false)));
@@ -904,7 +909,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
       embed.SetDescription(description);
     }
 
-    if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_LINE))
+    if (TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_LINE))
     {
       char playerLines[DISCORD_FIELD_LENGTH];
       int  total;
@@ -942,7 +947,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
       }
     }
 
-    if (TranslationPhraseExists(TRANSLATION_STATUS_COMMAND_FOOTER))
+    if (TranslationExistsAndNotEmpty(TRANSLATION_STATUS_COMMAND_FOOTER))
     {
       char footerStr[DISCORD_FOOTER_LENGTH];
       FormatEx(footerStr, sizeof(footerStr), "%t", TRANSLATION_STATUS_COMMAND_FOOTER, FormatServerBlock(playerCount));
@@ -1041,7 +1046,7 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     }
   }
 
-  if (!inListedChannel || messageFromSelf || message.IsBot() || !g_cvDiscordSendEnable.BoolValue || !TranslationPhraseExists(TRANSLATION_DISCORD_SERVER_MESSAGE))
+  if (!inListedChannel || messageFromSelf || message.IsBot() || !g_cvDiscordSendEnable.BoolValue || !TranslationExistsAndNotEmpty(TRANSLATION_DISCORD_SERVER_MESSAGE))
   {
     return;
   }
@@ -1092,11 +1097,11 @@ public void Discord_OnMessage(Discord discord, DiscordMessage message)
     {
       if (i != originalChannel)
       {
-        if (TranslationPhraseExists(TRANSLATION_DISCORD_DISCORD_MESSAGE))
+        if (TranslationExistsAndNotEmpty(TRANSLATION_DISCORD_DISCORD_MESSAGE))
         {
           char webhookName[MAX_DISCORD_NAME_LENGTH];
           webhookName = nickname;
-          if (TranslationPhraseExists(TRANSLATION_DISCORD_DISCORD_NAME))
+          if (TranslationExistsAndNotEmpty(TRANSLATION_DISCORD_DISCORD_NAME))
           {
             FormatEx(webhookName, sizeof(webhookName), "%t", TRANSLATION_DISCORD_DISCORD_NAME,
                      FormatDiscordMessageBlock(originalChannel),
@@ -1131,7 +1136,7 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
 
   logger.DebugEx("Outputting to: #%s", g_ChannelList[index].name);
 
-  if (!g_ServerIdle && index == g_ChannelListCount - 1 && TranslationPhraseExists(TRANSLATION_BOT_START_EVENT))
+  if (!g_ServerIdle && index == g_ChannelListCount - 1 && TranslationExistsAndNotEmpty(TRANSLATION_BOT_START_EVENT))
   {
     SendEventToDiscord(TRANSLATION_BOT_START_EVENT, FormatServerBlock(GetPlayers(false)));
   }
@@ -1189,6 +1194,12 @@ bool WebhookIsMine(DiscordWebhook wh)
 
 void SendToDiscordChannel(ChannelInfo channel, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
+  if (StrEqual(content, ""))
+  {
+    logger.Error("Can't send empty string!");
+    return;
+  }
+
   if (!BotRunning(g_Discord))
   {
     logger.ErrorEx("Bot not running! Can't send message: %s", content);
@@ -1220,6 +1231,12 @@ void SendToDiscordChannel(ChannelInfo channel, char[] content, char[] username, 
 
 void SendToDiscord(char[] content, char[] username, int client, int enabledMask = EVENT_BRIDGE, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
+  if (StrEqual(content, ""))
+  {
+    logger.Error("Can't send empty string!");
+    return;
+  }
+
   if (!BotRunning(g_Discord))
   {
     logger.ErrorEx("Bot not running! Can't send message: %s", content);
@@ -1237,6 +1254,12 @@ void SendToDiscord(char[] content, char[] username, int client, int enabledMask 
 
 void SendEventToDiscordImpl(char[] content, int enabledMask = EVENT_BRIDGE)
 {
+  if (StrEqual(content, ""))
+  {
+    logger.Error("Can't send empty string!");
+    return;
+  }
+
   char name[MAX_DISCORD_NAME_LENGTH];
   FormatEx(name, sizeof(name), "%t", TRANSLATION_WEBHOOK_EVENTS, FormatServerBlock(GetPlayers(false)));
 
@@ -1306,7 +1329,7 @@ void OnNextMapChanged(ConVar convar, const char[] oldValue, const char[] newValu
 
 void UpdatePresence()
 {
-  if (!TranslationPhraseExists(TRANSLATION_STATUS) || !TranslationPhraseExists(TRANSLATION_STATUS_PLURAL))
+  if (!TranslationExistsAndNotEmpty(TRANSLATION_STATUS) || !TranslationExistsAndNotEmpty(TRANSLATION_STATUS_PLURAL))
   {
     return;
   }
@@ -1328,12 +1351,16 @@ Action DeleteCommandsCmd(int args)
 {
   if (BotRunning(g_Discord))
   {
-    g_Discord.BulkDeleteGlobalCommands();
-    ReplyToCommand(0, "Deleted slash commands!");
+    if (g_Discord.BulkDeleteGlobalCommands())
+    {
+      ReplyToCommand(0, "%t", TRANSLATION_COMMAND_CMD_DELETE);
+      return Plugin_Continue;
+    }
+    ReplyToCommand(0, "%t", TRANSLATION_COMMAND_CMD_DELETE_FAIL, "Unknown error.");
     return Plugin_Continue;
   }
 
-  ReplyToCommand(0, "Could not delete slash commands. Bot is not running.");
+  ReplyToCommand(0, "%t", TRANSLATION_COMMAND_CMD_DELETE_FAIL, "Bot is not running");
   return Plugin_Continue;
 }
 
