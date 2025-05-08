@@ -46,13 +46,22 @@ jobs:
 
       - name: Structure build files
         run: |
-          mv yadr/*1.12*/addons/sourcemod/plugins/* ./
+          mv yadr/*1.12*/addons/sourcemod/* ./
           rm -rf yadr
+
+      - name: Fill in updatefile
+        run: |
+          PLUGIN=$(printf '    "Plugin"      "Path_SM/%s"\n' plugins/**/*.*)
+          TRANS=$(printf '    "Plugin"      "Path_SM/%s"\n' translations/**/*.*)
+          SOURCE=$(printf '    "Source"      "Path_SM/%s"\n' scripting/**/*.*)
+          awk -v r=$PLUGIN '{gsub(/PLUGIN_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
+          awk -v r=$TRANS '{gsub(/TRANSLATION_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
+          awk -v r=$SOURCE '{gsub(/SOURCE_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
 
       - name: Generate Directory listing
         uses: yKicchan/generate-directory-listing-action@v1
         with:
-          target: dist
+          target: ./
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
