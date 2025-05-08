@@ -46,7 +46,7 @@ jobs:
 
       - name: Structure build files
         run: |
-          mv -f yadr/*1.12*/addons/sourcemod/* ./
+          mv -Rf yadr/*1.12*/addons/sourcemod/* ./
           rm -rf yadr
 
       - name: Fill in updatefile
