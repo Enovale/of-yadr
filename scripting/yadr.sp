@@ -184,7 +184,7 @@ public void OnConfigsExecuted()
 
 public void Updater_OnPluginUpdated()
 {
-  Updater_ReloadPlugin();
+  ReloadPlugin();
 }
 
 void InitializeBannedWords(bool force = false)
