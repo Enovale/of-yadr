@@ -71,7 +71,7 @@ jobs:
       - name: Checkout updater
         uses: actions/checkout@v4
         with:
-          repository: nukkonyan/Updater
+          repository: sbpp/Updater-include-mirror
           path: updater
 
       - name: Copy includes

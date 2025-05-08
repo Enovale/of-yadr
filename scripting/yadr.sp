@@ -152,7 +152,9 @@ public void OnConfigsExecuted()
   if (LibraryExists("updater"))
   {
     // TODO
-    // Updater_AddPlugin();
+    char url[MAX_BUFFER_LENGTH];
+    FormatEx(url, sizeof(url), PLUGIN_URL..."/releases/latest/download/yadr-sm%i.%i.zip", SOURCEMOD_V_MAJOR, SOURCEMOD_V_MINOR);
+    //Updater_AddPlugin(url);
   }
 
   UpdateCvars();
@@ -178,6 +180,11 @@ public void OnConfigsExecuted()
   }
 
   logger.DebugEx("RCON: %i, PSAY: %i, BAN: %i, KICK: %i, CHANGELEVEL: i", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
+}
+
+public void Updater_OnPluginUpdated()
+{
+  Updater_ReloadPlugin();
 }
 
 void InitializeBannedWords(bool force = false)
