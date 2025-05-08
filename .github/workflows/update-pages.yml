@@ -42,6 +42,7 @@ jobs:
         with:
           workflow: ci.yml
           name: /^yadr-.*(1\.12).*$/
+          name_is_regexp: true
           path: yadr
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
