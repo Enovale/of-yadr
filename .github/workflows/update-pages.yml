@@ -51,7 +51,7 @@ jobs:
 
       - name: Update updatefile
         run: |
-          sh updater.sh updatefile.txt updatefile.txt
+          bash updater.sh updatefile.txt updatefile.txt
 
       - name: Generate Directory listing
         uses: yKicchan/generate-directory-listing-action@v1

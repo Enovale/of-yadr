@@ -151,10 +151,7 @@ public void OnConfigsExecuted()
 
   if (LibraryExists("updater"))
   {
-    // TODO
-    char url[MAX_BUFFER_LENGTH];
-    FormatEx(url, sizeof(url), PLUGIN_URL..."/releases/latest/download/yadr-sm%i.%i.zip", SOURCEMOD_V_MAJOR, SOURCEMOD_V_MINOR);
-    //Updater_AddPlugin(url);
+    Updater_AddPlugin("https://enovale.github.io/of-yadr/updatefile.txt");
   }
 
   UpdateCvars();
