@@ -4,7 +4,7 @@ name: Deploy Updater files
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["*"]
+    branches: ["master"]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -49,40 +49,9 @@ jobs:
           cp -R yadr/*1.12*/addons/sourcemod/* ./
           rm -rf yadr
 
-      - name: Gather updatefile files
-        id: updatefile-globs
+      - name: Update updatefile
         run: |
-          shopt -s globstar
-          PLUGIN=$(printf '    "Plugin"      "Path_SM/%s"\n' plugins/**/*.* | sed -z 's/\n/\\\n/g')
-          TRANS=$(printf '    "Plugin"      "Path_SM/%s"\n' translations/**/*.* | sed -z 's/\n/\\\n/g')
-          SOURCE=$(printf '    "Source"      "Path_SM/%s"\n' scripting/**/*.* | sed -z 's/\n/\\\n/g')
-          echo "plugin=$PLUGIN" >> $GITHUB_OUTPUT
-          echo "trans=$TRANS" >> $GITHUB_OUTPUT
-          echo "source=$SOURCE" >> $GITHUB_OUTPUT
-
-      - name: Fill in updatefile plugin files
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "PLUGIN_REPLACE_HERE"
-          replace: ${{ steps.updatefile-globs.outputs.plugin }}
-          include: updatefile.txt
-          regex: false
-
-      - name: Fill in updatefile translation files
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "TRANSLATION_REPLACE_HERE"
-          replace: ${{ steps.updatefile-globs.outputs.trans }}
-          include: updatefile.txt
-          regex: false
-
-      - name: Fill in updatefile source files
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "SOURCE_REPLACE_HERE"
-          replace: ${{ steps.updatefile-globs.outputs.source }}
-          include: updatefile.txt
-          regex: false
+          sh updater.sh updatefile.txt updatefile.txt
 
       - name: Generate Directory listing
         uses: yKicchan/generate-directory-listing-action@v1
