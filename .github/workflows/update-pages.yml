@@ -51,6 +51,7 @@ jobs:
 
       - name: Fill in updatefile
         run: |
+          shopt -s globstar
           PLUGIN=$(printf '    "Plugin"      "Path_SM/%s"\n' plugins/**/*.*)
           TRANS=$(printf '    "Plugin"      "Path_SM/%s"\n' translations/**/*.*)
           SOURCE=$(printf '    "Source"      "Path_SM/%s"\n' scripting/**/*.*)
