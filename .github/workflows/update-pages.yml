@@ -41,7 +41,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v9
         with:
           workflow: ci.yml
-          name: yadr-.*(1\.12)
+          name: ^yadr-.*(1\.12).*$
           path: yadr
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
