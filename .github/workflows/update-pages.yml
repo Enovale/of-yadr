@@ -49,15 +49,40 @@ jobs:
           cp -R yadr/*1.12*/addons/sourcemod/* ./
           rm -rf yadr
 
-      - name: Fill in updatefile
+      - name: Gather updatefile files
+        id: updatefile-globs
         run: |
           shopt -s globstar
           PLUGIN=$(printf '    "Plugin"      "Path_SM/%s"\n' plugins/**/*.*)
           TRANS=$(printf '    "Plugin"      "Path_SM/%s"\n' translations/**/*.*)
           SOURCE=$(printf '    "Source"      "Path_SM/%s"\n' scripting/**/*.*)
-          awk -v r=${PLUGIN} '{gsub(/PLUGIN_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
-          awk -v r=${TRANS} '{gsub(/TRANSLATION_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
-          awk -v r=${SOURCE} '{gsub(/SOURCE_REPLACE_HERE/,r)}1' updatefile.txt > updatefile.tmp && mv updatefile.tmp updatefile.txt
+          echo "plugin=$PLUGIN" >> $GITHUB_OUTPUT
+          echo "trans=$TRANS" >> $GITHUB_OUTPUT
+          echo "source=$SOURCE" >> $GITHUB_OUTPUT
+
+      - name: Fill in updatefile plugin files
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "PLUGIN_REPLACE_HERE"
+          replace: ${{ steps.updatefile-globs.outputs.plugin }}
+          include: updatefile.txt
+          regex: false
+
+      - name: Fill in updatefile translation files
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "TRANSLATION_REPLACE_HERE"
+          replace: ${{ steps.updatefile-globs.outputs.trans }}
+          include: updatefile.txt
+          regex: false
+
+      - name: Fill in updatefile source files
+        uses: jacobtomlinson/gha-find-replace@v3
+        with:
+          find: "SOURCE_REPLACE_HERE"
+          replace: ${{ steps.updatefile-globs.outputs.source }}
+          include: updatefile.txt
+          regex: false
 
       - name: Generate Directory listing
         uses: yKicchan/generate-directory-listing-action@v1
