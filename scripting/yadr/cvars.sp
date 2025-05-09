@@ -21,6 +21,7 @@ ConVar g_cvMapChangeGracePeriod;
 ConVar g_cvChannelEventEnableBits;
 ConVar g_cvCommandEnableBits;
 
+ConVar g_cvUpdateUrl;
 ConVar g_cvVerboseEnable;
 
 // Cached internal convars
@@ -43,6 +44,7 @@ void   CreateCvars()
   g_cvChannelEventEnableBits  = CreateConVar(PLUGIN_CONVAR_PREFIX... "channel_event_bits", "255", "Semicolon separated list of bitmasks to enable events in individual channels. 1: Bridge this channel to other channels linked by the bot\n2: BAN\n4: REPORT");
   g_cvCommandEnableBits       = CreateConVar(PLUGIN_CONVAR_PREFIX... "command_enable_bits", "0", "Bitmask that enable various admin-only commands. 1: RCON\n2: PSAY\n4: KICK\n8: BAN\n16: REPORT\n32: CHANGELEVEL");
 
+  g_cvUpdateUrl               = CreateConVar(PLUGIN_CONVAR_PREFIX... "update_url", "https://enovale.github.io/of-yadr/updatefile.txt", "URL to use for Updater integration.");
   g_cvVerboseEnable           = CreateConVar(PLUGIN_CONVAR_PREFIX... "verbose", "0", "Enable verbose logging for the discord backend.");
 
   g_cvFragLimit               = FindConVar("mp_fraglimit");

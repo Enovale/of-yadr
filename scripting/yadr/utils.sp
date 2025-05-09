@@ -56,7 +56,7 @@ bool TranslationExistsAndNotEmpty(const char[] translationPhrase)
   }
 
   char buffer[MAX_BUFFER_LENGTH];
-  int count = FormatEx(buffer, sizeof(buffer), "%t", translationPhrase, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+  int  count = FormatEx(buffer, sizeof(buffer), "%t", translationPhrase, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
   return count > 0;
 }

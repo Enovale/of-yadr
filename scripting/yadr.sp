@@ -151,7 +151,9 @@ public void OnConfigsExecuted()
 
   if (LibraryExists("updater"))
   {
-    Updater_AddPlugin("https://enovale.github.io/of-yadr/updatefile.txt");
+    char url[MAX_BUFFER_LENGTH];
+    g_cvUpdateUrl.GetString(url, sizeof(url));
+    Updater_AddPlugin(url);
   }
 
   UpdateCvars();

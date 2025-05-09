@@ -29,3 +29,20 @@ enum struct ChannelInfo
   }
 }
 // clang-format on
+
+public SharedPlugin __pl_yadr = 
+{
+	name = "yadr",
+	file = "yadr.smx",
+#if defined REQUIRE_PLUGIN
+	required = 1,
+#else
+	required = 0,
+#endif
+};
+
+#if !defined REQUIRE_PLUGIN
+public void __pl_yadr_SetNTVOptional()
+{
+}
+#endif
