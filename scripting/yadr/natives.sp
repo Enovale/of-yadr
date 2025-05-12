@@ -31,7 +31,7 @@ void RegisterCmds()
   RegAdminCmd(CMD_SEND_EVENT, SendEventCmd, Admin_RCON, "Sends an event message to all the registered discord channels.");
 }
 
-// TODO Complete cmds
+// TODO Decide how to allow for webhooks and such
 Action SendToChannelCmd(int client, int args)
 {
   if (args < 4)
@@ -40,6 +40,25 @@ Action SendToChannelCmd(int client, int args)
     return Plugin_Handled;
   }
 
+  char channelId[SNOWFLAKE_SIZE];
+  GetCmdArg(1, channelId, sizeof(channelId));
+  ChannelInfo info;
+  info.id = channelId;
+  info.finishedLoading = true;
+
+  char content[MAX_DISCORD_MESSAGE_LENGTH];
+  GetCmdArg(2, content, sizeof(content));
+  char username[MAX_DISCORD_NAME_LENGTH];
+  GetCmdArg(3, username, sizeof(username));
+  int target = GetCmdArgInt(4);
+  char avatarUrl[MAX_AVATAR_URL_LENGTH];
+  if (args >= 5)
+  {
+    GetCmdArg(5, avatarUrl, sizeof(avatarUrl));
+  }
+
+  SendToDiscordChannel(info, content, username, target, avatarUrl);
+  PrintToConsole(client, "Message sent!");
   return Plugin_Continue;
 }
 
