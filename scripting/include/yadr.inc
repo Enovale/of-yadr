@@ -17,10 +17,20 @@ enum struct ChannelInfo
   char           lastAuthor[MAX_AUTHID_LENGTH];
   int            enabledEvents;
   DiscordWebhook webhook;
+  bool           finishedLoading;
+
+  void SetWebhook(DiscordWebhook webhook)
+  {
+    if (webhook != INVALID_HANDLE)
+    {
+      this.webhook = webhook;
+      this.webhook.SetAvatarData("");
+    }
+  }
 
   bool WebhookAvailable()
   {
-    return this.webhook != INVALID_HANDLE;
+    return this.finishedLoading && this.webhook != INVALID_HANDLE;
   }
 
   bool IsEqual(const char[] channelId)
@@ -30,19 +40,35 @@ enum struct ChannelInfo
 }
 // clang-format on
 
-public SharedPlugin __pl_yadr = 
-{
-	name = "yadr",
-	file = "yadr.smx",
+forward void YADR_BotReady(Discord discord);
+
+native void YADR_SendToChannel(ChannelInfo channel, char[] content, char[] username, int client, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "");
+
+native void YADR_Send(char[] content, char[] username, int client, int enabledMask = 0, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "");
+
+native void YADR_SendEvent(char[] content, int enabledMask = 0);
+
+native int YADR_GetRegisteredChannelCount();
+
+native ChannelInfo YADR_GetRegisteredChannel(int index);
+
+public SharedPlugin __pl_yadr = {
+  name = "yadr",
+  file = "yadr.smx",
 #if defined REQUIRE_PLUGIN
-	required = 1,
+  required = 1,
 #else
-	required = 0,
+  required = 0,
 #endif
 };
 
 #if !defined REQUIRE_PLUGIN
 public void __pl_yadr_SetNTVOptional()
 {
+  MarkNativeAsOptional("YADR_SendToChannel");
+  MarkNativeAsOptional("YADR_Send");
+  MarkNativeAsOptional("YADR_SendEvent");
+  MarkNativeAsOptional("YADR_GetRegisteredChannelCount");
+  MarkNativeAsOptional("YADR_GetRegisteredChannel");
 }
 #endif

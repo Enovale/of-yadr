@@ -1,10 +1,8 @@
+# Yet Another Discord Relay for SourceMod
+
 [![Nightly Build](https://github.com/Enovale/of-yadr/workflows/Nightly%20Build/badge.svg)](https://github.com/Enovale/of-yadr/actions?query=workflow:"Nightly+Build")
 [![GitHub release](https://img.shields.io/github/release/Enovale/of-yadr?include_prereleases=&sort=semver&color=blue)](https://github.com/Enovale/of-yadr/releases/)
 [![License](https://img.shields.io/badge/License-GPLv3-blue)](#license)
-
-# Yet Another Discord Relay for SourceMod
-
-Proper readme WIP
 
 > [!WARNING]  
 > This project has only been tested with Open Fortress on Sourcemod 1.12.
@@ -48,6 +46,7 @@ More detailed installation help with pictures can be found on the [wiki](https:/
 - Relay events like player connect/disconnect, map change, bans/reports to Discord
 - Run rcon commands, ban/kick players, psay to players, remotely with slash commands.
 - Makes sure player names and SteamIDs are searchable in the discord history, without clogging up the conversation
+- API to create third-party plugins that can integrate with YaDR!
 
 ## Building
 

@@ -17,6 +17,7 @@
 #include "yadr/translation_phrases.sp"
 #include "yadr/structs.sp"
 #include "yadr/cvars.sp"
+#include "yadr/natives.sp"
 #include <yadr>
 
 #pragma newdecls required
@@ -120,11 +121,11 @@ public void OnPluginStart()
   LoadTranslations(PLUGIN_TRANS_PHRASES_FILE);
   LoadTranslations(PLUGIN_TRANS_INFO_FILE);
 
+  RegisterCmds();
+
   CreateCvars();
 
   RegServerCmd(PLUGIN_CONVAR_PREFIX... "delete_commands", DeleteCommandsCmd, "Deletes all slash commands associated with this bot, in case you've changed the enabled commands bits.");
-  // RegAdminCmd(PLUGIN_CONVAR_PREFIX... "send", SendMessageCmd, Admin_RCON, "Sends a message to a discord channel using the internal channel and webhook list.");
-  // RegAdminCmd(PLUGIN_CONVAR_PREFIX... "send_all", SendMessageAllCmd, Admin_RCON, "Sends a message to all the registered discord channels.");
 
   // TODO This seems bad but also I don't know why translations don't reload anyway
   ServerCommand("sm_reload_translations");
@@ -587,7 +588,9 @@ void UpdateCvars()
   {
     if (StrContains(webhookUrlsString, ";") < 0)
     {
-      g_ChannelList[0].webhook = new DiscordWebhook(webhookUrlsString);
+      g_ChannelList[0].SetWebhook(new DiscordWebhook(webhookUrlsString));
+      g_ChannelList[0].finishedLoading = true;
+      CheckForBotFullyReady();
     }
     else
     {
@@ -598,8 +601,9 @@ void UpdateCvars()
       {
         if (!g_ChannelList[i].WebhookAvailable() && !StrEqual(g_WebhookUrlsList[i], ""))
         {
-          g_ChannelList[i].webhook = new DiscordWebhook(g_WebhookUrlsList[i]);
-          g_ChannelList[i].webhook.SetAvatarData("");
+          g_ChannelList[i].SetWebhook(new DiscordWebhook(g_WebhookUrlsList[i]));
+          g_ChannelList[i].finishedLoading = true;
+          CheckForBotFullyReady();
         }
       }
     }
@@ -728,7 +732,7 @@ public void Discord_OnReady(Discord discord)
   for (int i = 0; i < g_ChannelListCount; i++)
   {
     g_Discord.GetChannel(g_ChannelList[i].id, OnGetChannelCallback, i);
-    if (g_cvWebhookModeEnable.BoolValue)
+    if (g_cvWebhookModeEnable.BoolValue && !g_ChannelList[i].finishedLoading)
     {
       g_Discord.GetChannelWebhooks(g_ChannelList[i].id, OnGetChannelWebhooks, i);
     }
@@ -1141,11 +1145,6 @@ void OnGetChannelCallback(Discord discord, DiscordChannel channel, int index)
   CRemoveTags(g_ChannelList[index].name, sizeof(g_ChannelList[].name));
 
   logger.DebugEx("Outputting to: #%s", g_ChannelList[index].name);
-
-  if (!g_ServerIdle && index == g_ChannelListCount - 1 && TranslationExistsAndNotEmpty(TRANSLATION_BOT_START_EVENT))
-  {
-    SendEventToDiscord(TRANSLATION_BOT_START_EVENT, FormatServerBlock(GetPlayers(false)));
-  }
 }
 
 public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, int count, any data)
@@ -1162,21 +1161,49 @@ public void OnGetChannelWebhooks(Discord discord, DiscordWebhook[] webhookMap, i
 
     if (!g_ChannelList[data].WebhookAvailable() && WebhookIsMine(webhookMap[i]))
     {
-      g_ChannelList[data].webhook = view_as<DiscordWebhook>(CloneHandle(webhookMap[i]));
-      g_ChannelList[data].webhook.SetAvatarData("");
+      g_ChannelList[data].SetWebhook(view_as<DiscordWebhook>(CloneHandle(webhookMap[i])));
+      g_ChannelList[data].finishedLoading = true;
+      CheckForBotFullyReady();
     }
   }
 
   if (!g_ChannelList[data].WebhookAvailable())
   {
     logger.DebugEx("Creating webhook for channel %s", g_ChannelList[data].id);
-    g_Discord.CreateWebhook(g_ChannelList[data].id, g_WebhookName, OnCreateWebhook, data);
+    if (!g_Discord.CreateWebhook(g_ChannelList[data].id, g_WebhookName, OnCreateWebhook, data))
+    {
+      g_ChannelList[data].finishedLoading = true;
+      CheckForBotFullyReady();
+    }
   }
 }
 
 void OnCreateWebhook(Discord discord, DiscordWebhook wh, any data)
 {
-  g_ChannelList[data].webhook = view_as<DiscordWebhook>(CloneHandle(wh));
+  g_ChannelList[data].SetWebhook(view_as<DiscordWebhook>(CloneHandle(wh)));
+  g_ChannelList[data].finishedLoading = true;
+  CheckForBotFullyReady();
+}
+
+void CheckForBotFullyReady()
+{
+  for (int i = 0; i < g_ChannelListCount; i++)
+  {
+    if (!g_ChannelList[i].finishedLoading)
+    {
+      return;
+    }
+  }
+
+  // Bot Start Event
+  if (TranslationExistsAndNotEmpty(TRANSLATION_BOT_START_EVENT))
+  {
+    SendEventToDiscord(TRANSLATION_BOT_START_EVENT, FormatServerBlock(GetPlayers(false)));
+  }
+
+  Call_StartForward(g_BotReadyForward);
+  Call_PushCell(g_Discord);
+  Call_Finish();
 }
 
 bool WebhookIsMine(DiscordWebhook wh)
@@ -1235,7 +1262,7 @@ void SendToDiscordChannel(ChannelInfo channel, char[] content, char[] username, 
   }
 }
 
-void SendToDiscord(char[] content, char[] username, int client, int enabledMask = EVENT_BRIDGE, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
+void SendToDiscord(char[] content, char[] username, int client, int enabledMask = 0, char avatarUrlOverride[MAX_AVATAR_URL_LENGTH] = "")
 {
   if (StrEqual(content, ""))
   {
@@ -1258,7 +1285,7 @@ void SendToDiscord(char[] content, char[] username, int client, int enabledMask 
   }
 }
 
-void SendEventToDiscordImpl(char[] content, int enabledMask = EVENT_BRIDGE)
+void SendEventToDiscordImpl(char[] content, int enabledMask = 0)
 {
   if (StrEqual(content, ""))
   {
@@ -1368,6 +1395,16 @@ Action DeleteCommandsCmd(int args)
 
   ReplyToCommand(0, "%t", TRANSLATION_COMMAND_CMD_DELETE_FAIL, "Bot is not running");
   return Plugin_Continue;
+}
+
+int GetChannelListCount()
+{
+  return g_ChannelListCount;
+}
+
+ChannelInfo GetChannel(int index)
+{
+  return g_ChannelList[index];
 }
 
 public void OnPluginEnd()

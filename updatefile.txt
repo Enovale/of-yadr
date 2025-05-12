@@ -8,6 +8,8 @@
     }
 		
     "Notes"	"Initial Release"
+    "Notes"	"Added API so other plugins can integrate with YaDR"
+    "Notes"	"Added admin commands to send messages to discord"
   }
 	
   "Files"
