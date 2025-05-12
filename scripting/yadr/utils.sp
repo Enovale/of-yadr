@@ -131,20 +131,7 @@ int GetClientTeamEx(int client)
 // TODO This seems not adaptable to other games
 char[] GetClientTeamNameIfSpectator(char[] teamName)
 {
-#if SOURCEMOD_V_MINOR == 11
-  char buffer[MAX_TEAM_NAME];
-  if (StrContains(teamName, "Spec", false) == -1)
-  {
-    buffer = "";
-  }
-  else
-  {
-    strcopy(buffer, sizeof(buffer), teamName);
-  }
-  return buffer;
-#else
   return StrContains(teamName, "Spec", false) == -1 ? "" : teamName;
-#endif
 }
 
 char[] GetClientConnectionTime(int client)

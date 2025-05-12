@@ -19,7 +19,6 @@ jobs:
         os:
           - ubuntu-latest
         sm_version:
-          - "1.11"
           - "1.12"
 
     steps:

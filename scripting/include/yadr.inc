@@ -50,9 +50,7 @@ native void YADR_SendEvent(char[] content, int enabledMask = 0);
 
 native int YADR_GetRegisteredChannelCount();
 
-#if SOURCEMOD_V_MINOR > 11
 native ChannelInfo YADR_GetRegisteredChannel(int index);
-#endif
 
 public SharedPlugin __pl_yadr = {
   name = "yadr",
@@ -71,8 +69,6 @@ public void __pl_yadr_SetNTVOptional()
   MarkNativeAsOptional("YADR_Send");
   MarkNativeAsOptional("YADR_SendEvent");
   MarkNativeAsOptional("YADR_GetRegisteredChannelCount");
-#if SOURCEMOD_V_MINOR > 11
   MarkNativeAsOptional("YADR_GetRegisteredChannel");
-#endif
 }
 #endif
