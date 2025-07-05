@@ -5,7 +5,11 @@
 
 #include <SteamWorks>
 #include <morecolors>
+#if defined YADR_NO_LOG4SP_EXT_REQUIRE
+#include "log4sp_empty.inc"
+#else
 #include <log4sp>
+#endif
 
 #pragma newdecls required
 #pragma semicolon 1
