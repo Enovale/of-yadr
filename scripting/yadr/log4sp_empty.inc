@@ -462,13 +462,6 @@ methodmap ServerConsoleSink < Sink {
 
 
 // Logger Inner
-// Only log messages with level Info or higher
-static char[] __LoggerInner_VFormat(const char[] format, int varpos) {
-  char message[1024];
-  VFormat(message, sizeof(message), format, varpos);
-  return message;
-}
-
 static void __LoggerInner_Log(LogLevel lvl, const char[] msg) {
   switch (lvl) {
 #if __COMPILER_LOG_LEVEL <= LOG4SP_LEVEL_TRACE
