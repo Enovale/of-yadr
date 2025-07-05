@@ -517,7 +517,7 @@ static void __LoggerInner_LogLoc(const char[] file, int line, LogLevel lvl, cons
   if (folderIndex == -1)
     FormatEx(message, sizeof(message), "[%s:%d] %s", file, line, msg);
   else
-    FormatEx(message, sizeof(message), "[%s:%d] %s", file[folderIndex], line, msg);
+    FormatEx(message, sizeof(message), "[%s:%d] %s", file[folderIndex + 1], line, msg);
 
   __LoggerInner_Log(lvl, message);
 }
