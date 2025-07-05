@@ -32,6 +32,9 @@
 #endif
 
 // Common
+#if defined _log4sp_common_included
+  #error Cannot include both <log4sp/common> and "log4sp_empty.inc" at the same time
+#endif
 #define LOG4SP_LEVEL_TRACE              0
 #define LOG4SP_LEVEL_DEBUG              1
 #define LOG4SP_LEVEL_INFO               2
@@ -114,6 +117,9 @@ stock LogLevel NameToLogLevel(const char[] name) {
 }
 
 // Logger
+#if defined _log4sp_logger_included
+  #error Cannot include both <log4sp/logger> and "log4sp_empty.inc" at the same time
+#endif
 typeset LoggerErrorHandler {
   function void (const char[] msg);
   function void (const char[] msg, const char[] name);
@@ -289,6 +295,9 @@ methodmap Logger < Handle {
 }
 
 // Sink
+#if defined _log4sp_sinks_sink_included
+  #error Cannot include both <log4sp/logger> and "log4sp_empty.inc" at the same time
+#endif
 typedef SinkFileOpenPre = function void (const char[] filename);
 typedef SinkFileClosePost = function void (const char[] filename);
 
@@ -309,6 +318,9 @@ methodmap Sink < Handle {
 }
 
 // BasicFileSink
+#if defined _log4sp_sinks_basic_file_sink_included
+  #error Cannot include both <log4sp/basic_file_sink> and "log4sp_empty.inc" at the same time
+#endif
 methodmap BasicFileSink < Sink {
   public BasicFileSink(const char[] file, bool truncate = false, SinkFileOpenPre openPre = INVALID_FUNCTION, SinkFileClosePost closePost = INVALID_FUNCTION) {
     return null;
@@ -326,6 +338,9 @@ methodmap BasicFileSink < Sink {
 }
 
 // CallbackSink
+#if defined _log4sp_sinks_callback_sink_included
+  #error Cannot include both <log4sp/callback_sink> and "log4sp_empty.inc" at the same time
+#endif
 typeset CustomLogCallback {
   function void (const char[] name, LogLevel lvl, const char[] msg);
   function void (const char[] name, LogLevel lvl, const char[] msg, const char[] file, int line, const char[] func);
@@ -347,6 +362,9 @@ methodmap CallbackSink < Sink {
 }
 
 // ClientChatAllSink
+#if defined _log4sp_sinks_client_chat_all_sink_included
+  #error Cannot include both <log4sp/client_chat_all_sink> and "log4sp_empty.inc" at the same time
+#endif
 methodmap ClientChatAllSink < CallbackSink {
   public ClientChatAllSink() {
     return null;
@@ -357,6 +375,9 @@ methodmap ClientChatAllSink < CallbackSink {
 }
 
 // ClientConsoleAllSink
+#if defined _log4sp_sinks_client_console_all_sink_included
+  #error Cannot include both <log4sp/client_console_all_sink> and "log4sp_empty.inc" at the same time
+#endif
 methodmap ClientConsoleAllSink < CallbackSink {
   public ClientConsoleAllSink() {
     return null;
@@ -367,6 +388,9 @@ methodmap ClientConsoleAllSink < CallbackSink {
 }
 
 // DailyFileSink
+#if defined _log4sp_sinks_daily_file_sink_included
+  #error Cannot include both <log4sp/daily_file_sink> and "log4sp_empty.inc" at the same time
+#endif
 typeset DailyFileCalculator {
   function void (char[] filename, int maxlen, int sec);
 }
@@ -387,6 +411,9 @@ methodmap DailyFileSink < Sink {
 }
 
 // RingBufferSink
+#if defined _log4sp_sinks_ringbuffer_sink_included
+  #error Cannot include both <log4sp/ringbuffer_sink> and "log4sp_empty.inc" at the same time
+#endif
 typeset DrainCallback {
   function void (const char[] name, LogLevel lvl, const char[] msg);
   function void (const char[] name, LogLevel lvl, const char[] msg, const char[] file, int line, const char[] func);
@@ -412,6 +439,9 @@ methodmap RingBufferSink < Sink {
 }
 
 // RotatingFileSink
+#if defined _log4sp_sinks_rotating_file_sink_included
+  #error Cannot include both <log4sp/rotating_file_sink> and "log4sp_empty.inc" at the same time
+#endif
 methodmap RotatingFileSink < Sink {
   public RotatingFileSink(const char[] file, const int maxFileSize, const int maxFiles, bool rotateOnOpen = false, SinkFileOpenPre openPre = INVALID_FUNCTION, SinkFileClosePost closePost = INVALID_FUNCTION) {
     return null;
@@ -451,6 +481,9 @@ methodmap RotatingFileSink < Sink {
 }
 
 // ServerConsoleSink
+#if defined _log4sp_sinks_server_console_sink_included
+  #error Cannot include both <log4sp/server_console_sink> and "log4sp_empty.inc" at the same time
+#endif
 methodmap ServerConsoleSink < Sink {
   public ServerConsoleSink() {
     return null;
