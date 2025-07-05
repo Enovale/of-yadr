@@ -5,7 +5,7 @@
 
 #include <SteamWorks>
 #include <morecolors>
-#if defined YARD_NO_LOG4SP_EXT_REQUIRE
+#if defined YADR_NO_LOG4SP_EXT_REQUIRE
 #include "log4sp_empty.inc"
 #else
 #include <log4sp>
