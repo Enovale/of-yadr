@@ -182,7 +182,7 @@ public void OnConfigsExecuted()
   logger.DebugEx("RCON: %i, PSAY: %i, BAN: %i, KICK: %i, CHANGELEVEL: i", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
 }
 
-public void Updater_OnPluginUpdated()
+public int Updater_OnPluginUpdated()
 {
   ReloadPlugin();
 }
@@ -855,6 +855,7 @@ public void Discord_OnSlashCommand(Discord discord, DiscordInteraction interacti
 
     if (client < 0)
     {
+      logger.WarnEx("Couldn't find client %d: %s", client, player);
       interactionEx.CreateEphemeralResponseEx("%t", TRANSLATION_COMMAND_ERROR, "Target was invalid, couldn't find player.");
       return;
     }

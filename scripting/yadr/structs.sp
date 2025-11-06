@@ -42,7 +42,7 @@ methodmap DiscordAutocompleteInteractionEx < DiscordAutocompleteInteraction
   public void AddAutocompleteChoiceEx(const char[] name, char[] format, any ...)
   {
     char buffer[MAX_BUFFER_LENGTH];
-    VFormat(buffer, sizeof(buffer), format, 3);
+    VFormat(buffer, sizeof(buffer), format, 4);
     this.AddAutocompleteChoiceString(name, buffer);
   }
 }
