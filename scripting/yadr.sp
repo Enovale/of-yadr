@@ -323,7 +323,7 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
     GetEventString(event, "reason", reason, sizeof(reason));
     ReplaceString(reason, sizeof(reason), "\n", " ");
 
-    if (!IsClientInGame(client))
+    if ((1 <= client <= MaxClients) && !IsClientInGame(client))
     {
       logger.DebugEx("Client disconnected without being in-game: %i", client);
       return Plugin_Continue;
