@@ -179,7 +179,7 @@ public void OnConfigsExecuted()
     }
   }
 
-  logger.DebugEx("RCON: %i, PSAY: %i, BAN: %i, KICK: %i, CHANGELEVEL: i", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
+  logger.DebugEx("RCON: %i, PSAY: %i, BAN: %i, KICK: %i, CHANGELEVEL: %i", IsCommandEnabled(COMMAND_RCON), IsCommandEnabled(COMMAND_PSAY), IsCommandEnabled(COMMAND_BAN), IsCommandEnabled(COMMAND_KICK), IsCommandEnabled(COMMAND_CHANGELEVEL));
 }
 
 public int Updater_OnPluginUpdated()
