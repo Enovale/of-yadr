@@ -79,10 +79,14 @@ char[] GetServerIP()
 
 bool IsValidClient(int client)
 {
-  if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || !IsClientConnected(client) || IsFakeClient(client) || IsClientSourceTV(client))
+  if (!(1 <= client <= MaxClients) || !IsClientInGame(client) || !IsClientConnected(client) || !IsRealClient(client))
     return false;
 
   return true;
+}
+
+bool IsRealClient(int client) {
+  return !IsFakeClient(client) && !IsClientSourceTV(client);
 }
 
 int GetPlayers(bool connecting)

@@ -301,6 +301,10 @@ public void OnServerExitHibernation()
 
 public void OnClientPostAdminCheck(int client)
 {
+  if (!IsRealClient(client)) {
+    return Plugin_Continue;
+  }
+
   GetProfilePic(client);
 
   if (!g_ServerIdle && g_AllowConnectEvents && TranslationExistsAndNotEmpty(TRANSLATION_PLAYER_CONNECT_EVENT))
@@ -322,6 +326,10 @@ Action OnPlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
     char reason[MAX_MESSAGE_LENGTH];
     GetEventString(event, "reason", reason, sizeof(reason));
     ReplaceString(reason, sizeof(reason), "\n", " ");
+
+    if (!IsRealClient(client)) {
+      return Plugin_Continue;
+    }
 
     if ((1 <= client <= MaxClients) && !IsClientInGame(client))
     {
